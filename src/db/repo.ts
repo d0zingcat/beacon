@@ -219,6 +219,44 @@ export async function listStatesByItemId(db: Db, itemId: number, limit: number):
 	);
 }
 
+export const ITEM_SORT_FIELDS = ['published_at', 'created_at', 'id', 'updated_at'] as const;
+export type ItemSortField = (typeof ITEM_SORT_FIELDS)[number];
+export type SortOrder = 'asc' | 'desc';
+
+const ITEM_SORT_SQL: Record<ItemSortField, string> = {
+	published_at: 'COALESCE(i.published_at, i.created_at)',
+	created_at: 'i.created_at',
+	id: 'i.id',
+	updated_at: 'i.updated_at',
+};
+
+export function parseItemSortField(value: string | undefined): ItemSortField | null {
+	if (!value) {
+		return 'published_at';
+	}
+	return (ITEM_SORT_FIELDS as readonly string[]).includes(value) ? (value as ItemSortField) : null;
+}
+
+export function parseSortOrder(value: string | undefined): SortOrder | null {
+	if (!value) {
+		return 'desc';
+	}
+	return value === 'asc' || value === 'desc' ? value : null;
+}
+
+function getItemSortValue(item: ItemRow, field: ItemSortField): number {
+	switch (field) {
+		case 'published_at':
+			return item.published_at ?? item.created_at;
+		case 'created_at':
+			return item.created_at;
+		case 'id':
+			return item.id;
+		case 'updated_at':
+			return item.updated_at;
+	}
+}
+
 export async function listItems(
 	db: Db,
 	input: {
@@ -226,8 +264,14 @@ export async function listItems(
 		mode?: SourceMode;
 		limit: number;
 		cursor?: number;
+		sort?: ItemSortField;
+		order?: SortOrder;
 	},
 ): Promise<ItemRow[]> {
+	const sort = input.sort ?? 'published_at';
+	const order = input.order ?? 'desc';
+	const sortExpr = ITEM_SORT_SQL[sort];
+	const orderDir = order === 'asc' ? 'ASC' : 'DESC';
 	const params: unknown[] = [];
 	const clauses: string[] = [];
 
@@ -240,8 +284,12 @@ export async function listItems(
 		params.push(input.mode);
 	}
 	if (input.cursor) {
-		clauses.push('i.id < ?');
-		params.push(input.cursor);
+		const cursorItem = await getItemById(db, input.cursor);
+		if (cursorItem) {
+			const op = order === 'desc' ? '<' : '>';
+			clauses.push(`(${sortExpr}, i.id) ${op} (?, ?)`);
+			params.push(getItemSortValue(cursorItem, sort), cursorItem.id);
+		}
 	}
 
 	const where = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '';
@@ -251,7 +299,7 @@ export async function listItems(
 		`SELECT i.* FROM items i
      JOIN sources s ON s.id = i.source_id
      ${where}
-     ORDER BY COALESCE(i.published_at, i.created_at) DESC, i.id DESC
+     ORDER BY ${sortExpr} ${orderDir}, i.id ${orderDir}
      LIMIT ?`,
 		...params,
 	);

@@ -8,6 +8,8 @@ import {
 	listItems,
 	listRunLogs,
 	listStatesByItemId,
+	parseItemSortField,
+	parseSortOrder,
 } from './db/repo';
 import { runSource } from './crawler/runner';
 import { enqueueSource } from './scheduler';
@@ -36,8 +38,16 @@ app.get('/items', async (c) => {
 		MAX_PAGE_LIMIT,
 	);
 	const cursor = c.req.query('cursor') ? Number(c.req.query('cursor')) : undefined;
+	const sort = parseItemSortField(c.req.query('sort'));
+	if (sort === null) {
+		return c.json({ error: 'Invalid sort field', allowed: ['published_at', 'created_at', 'id', 'updated_at'] }, 400);
+	}
+	const order = parseSortOrder(c.req.query('order'));
+	if (order === null) {
+		return c.json({ error: 'Invalid order', allowed: ['asc', 'desc'] }, 400);
+	}
 
-	const items = await listItems(db, { sourceId, mode, limit, cursor });
+	const items = await listItems(db, { sourceId, mode, limit, cursor, sort, order });
 	return c.json({
 		items,
 		nextCursor: items.length === limit ? items[items.length - 1]?.id : null,
