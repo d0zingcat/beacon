@@ -58,6 +58,22 @@ curl http://localhost:8787/health    # {"ok":true,"service":"beacon"}
 curl http://localhost:8787/sources   # 列出已注册源
 ```
 
+## GitHub Actions 部署（推荐）
+
+推送到 `main` 或手动触发 **Deploy** workflow 后，CI 会自动测试、从 Secret 读取 `D1_DATABASE_ID` 生成部署配置并部署。
+
+> Wrangler **不支持**在 `wrangler.jsonc` 里直接引用环境变量（见 [workers-sdk#12769](https://github.com/cloudflare/workers-sdk/issues/12769)）。仓库内 `wrangler.jsonc` 仅保留占位符 `local-beacon-db`；生产部署时 `scripts/generate-deploy-config.mjs` 读取 `D1_DATABASE_ID`，生成 gitignore 的 `.wrangler/deploy/wrangler.jsonc`，**不修改**已跟踪的配置文件。
+
+在仓库 **Settings → Secrets and variables → Actions** 中配置：
+
+| Secret | 说明 |
+|--------|------|
+| `CLOUDFLARE_API_TOKEN` | [API Token](https://dash.cloudflare.com/profile/api-tokens)，需 Workers Scripts、D1、Queues 等编辑权限 |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare 账号 ID（Dashboard 右侧栏） |
+| `D1_DATABASE_ID` | 远程 D1 的 UUID（`wrangler d1 list` 或 `d1 create` 返回值） |
+
+通知类敏感值仍通过 `wrangler secret put` 配置在 Worker 上（不必放进 GitHub Secrets）。
+
 ## 手动部署
 
 适用于已有 Cloudflare 账号、希望自行管理资源的场景。
@@ -66,7 +82,7 @@ curl http://localhost:8787/sources   # 列出已注册源
 pnpm install
 pnpm exec wrangler login
 
-# 创建远程 D1（首次），将返回的 database_id 写入 wrangler.jsonc
+# 创建远程 D1（首次）
 pnpm exec wrangler d1 create beacon-db
 pnpm exec wrangler d1 migrations apply beacon-db --remote
 
@@ -75,7 +91,8 @@ pnpm exec wrangler secret put TELEGRAM_BOT_TOKEN
 pnpm exec wrangler secret put TELEGRAM_CHAT_ID
 pnpm exec wrangler secret put FEISHU_WEBHOOK_URL   # 可选
 
-pnpm run deploy
+# 通过环境变量生成部署配置（不改动 wrangler.jsonc）
+D1_DATABASE_ID=<your-d1-uuid> pnpm run deploy:prod
 ```
 
 首次 `deploy` 时 Wrangler 会自动创建 `beacon-crawl` 与 `beacon-crawl-dlq` 队列。
