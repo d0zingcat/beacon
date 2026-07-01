@@ -3,6 +3,7 @@ import { getSource } from '../sources/registry';
 import { createDb } from '../db/client';
 import {
 	finishRunLog,
+	getSourceLastStatus,
 	hasItemByHash,
 	insertItem,
 	startRunLog,
@@ -11,7 +12,7 @@ import {
 } from '../db/repo';
 import { hashAppendItem } from './dedupe';
 import { processStateItem, toStateChangeEvent } from './state';
-import { dispatchNotifyEvents } from '../notify/telegram';
+import { dispatchNotifyEvents, notifyCrawlError } from '../notify/telegram';
 
 export interface RunResult {
 	sourceId: string;
@@ -73,6 +74,11 @@ async function processAppendItem(
 export async function runSource(env: Env, sourceId: string): Promise<RunResult> {
 	const source = getSource(sourceId);
 	if (!source) {
+		await notifyCrawlError(env, {
+			sourceId,
+			sourceName: sourceId,
+			error: `Source not found: ${sourceId}`,
+		});
 		return {
 			sourceId,
 			itemsNew: 0,
@@ -86,6 +92,7 @@ export async function runSource(env: Env, sourceId: string): Promise<RunResult> 
 	const db = createDb(env);
 	const now = Date.now();
 	const runId = await startRunLog(db, sourceId, now);
+	const previousStatus = await getSourceLastStatus(db, sourceId);
 
 	await upsertSource(db, {
 		id: source.id,
@@ -173,6 +180,15 @@ export async function runSource(env: Env, sourceId: string): Promise<RunResult> 
 			finishedAt: Date.now(),
 		});
 		await updateSourceRunStatus(db, sourceId, 'error', Date.now());
+		await notifyCrawlError(
+			env,
+			{
+				sourceId: source.id,
+				sourceName: source.name,
+				error: message,
+			},
+			{ previousStatus },
+		);
 		return {
 			sourceId,
 			itemsNew,
