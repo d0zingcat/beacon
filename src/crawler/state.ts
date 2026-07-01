@@ -79,7 +79,9 @@ export async function processStateItem(
 	}
 
 	const changed = source.diff
-		? prevState ? source.diff(prevState, input.state) : true
+		? prevState
+			? source.diff(prevState, input.state)
+			: false
 		: await defaultStateChanged(prevState, input.state);
 
 	const diff = prevState ? computeStateDiff(prevState, input.state) : undefined;
