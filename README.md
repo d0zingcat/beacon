@@ -73,8 +73,11 @@ Configure in **Settings → Secrets and variables → Actions**:
 | `CLOUDFLARE_API_TOKEN` | [API token](https://dash.cloudflare.com/profile/api-tokens) with Workers Scripts, D1, Queues edit |
 | `CLOUDFLARE_ACCOUNT_ID` | Account ID (Dashboard sidebar) |
 | `D1_DATABASE_ID` | Remote D1 UUID (`wrangler d1 list` or `d1 create` output) |
+| `FEISHU_WEBHOOK_URL` | Feishu bot webhook URL (optional; synced to Worker on deploy) |
+| `TELEGRAM_BOT_TOKEN` | Telegram bot token (optional) |
+| `TELEGRAM_CHAT_ID` | Telegram chat ID (optional) |
 
-Notification secrets stay on the Worker via `wrangler secret put` (no need in GitHub).
+GitHub Secrets are **not** available to the Worker at runtime by themselves. The Deploy workflow runs `wrangler secret put` after each deploy so notification channels reach `env.FEISHU_WEBHOOK_URL` etc. Do **not** put notification keys in `wrangler.jsonc` `vars` — empty values would override Worker secrets on every deploy.
 
 ### API token permissions
 

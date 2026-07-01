@@ -73,8 +73,11 @@ curl http://localhost:8787/sources   # 列出已注册源
 | `CLOUDFLARE_API_TOKEN` | [API Token](https://dash.cloudflare.com/profile/api-tokens)，需 Workers Scripts、D1、Queues 等编辑权限 |
 | `CLOUDFLARE_ACCOUNT_ID` | Cloudflare 账号 ID（Dashboard 右侧栏） |
 | `D1_DATABASE_ID` | 远程 D1 的 UUID（`wrangler d1 list` 或 `d1 create` 返回值） |
+| `FEISHU_WEBHOOK_URL` | 飞书群机器人 Webhook URL（可选；部署后由 CI 写入 Worker） |
+| `TELEGRAM_BOT_TOKEN` | Telegram Bot Token（可选） |
+| `TELEGRAM_CHAT_ID` | Telegram Chat ID（可选） |
 
-通知类敏感值仍通过 `wrangler secret put` 配置在 Worker 上（不必放进 GitHub Secrets）。
+GitHub Secrets **不会自动**进入 Worker 运行时环境。Deploy workflow 在每次部署后会执行 `wrangler secret put`，把上述通知类 Secret 同步到 Worker 的 `env`。请勿在 `wrangler.jsonc` 的 `vars` 里写通知变量——空字符串会在每次部署时覆盖 Worker secret。
 
 ## 手动部署
 

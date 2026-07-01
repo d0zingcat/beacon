@@ -57,3 +57,21 @@ jobs:
 
       - name: Deploy Worker
         run: pnpm exec wrangler deploy --config .wrangler/deploy/wrangler.jsonc
+
+      - name: Sync Worker notification secrets
+        env:
+          FEISHU_WEBHOOK_URL: ${{ secrets.FEISHU_WEBHOOK_URL }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          CONFIG=.wrangler/deploy/wrangler.jsonc
+          put_secret() {
+            local name="$1"
+            local value="$2"
+            if [ -n "$value" ]; then
+              printf '%s' "$value" | pnpm exec wrangler secret put "$name" --config "$CONFIG"
+            fi
+          }
+          put_secret FEISHU_WEBHOOK_URL "$FEISHU_WEBHOOK_URL"
+          put_secret TELEGRAM_BOT_TOKEN "$TELEGRAM_BOT_TOKEN"
+          put_secret TELEGRAM_CHAT_ID "$TELEGRAM_CHAT_ID"
