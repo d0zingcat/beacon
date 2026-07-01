@@ -21,8 +21,11 @@ if (!d1Binding) {
 }
 
 d1Binding.database_id = databaseId;
-// Deploy config lives in .wrangler/deploy/; point migrations at repo root.
+// Deploy config lives in .wrangler/deploy/; paths are relative to that file.
 d1Binding.migrations_dir = '../../migrations';
+if (typeof config.main === 'string' && !config.main.startsWith('../')) {
+	config.main = `../../${config.main}`;
+}
 
 mkdirSync(dirname(deployConfigPath), { recursive: true });
 writeFileSync(deployConfigPath, `${JSON.stringify(config, null, '\t')}\n`);
