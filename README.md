@@ -147,7 +147,7 @@ Response includes `itemsNotified` (count of messages sent this run).
 | `cursor-changelog` | append | HTML (cursor.com/changelog) | Live |
 | `kiro-changelog` | append | RSS (kiro.dev/changelog) | Live |
 | `bedrock-models` | append | Markdown (AWS Bedrock model list) | Live |
-| `vps-stock` | state | Browser Rendering | Placeholder |
+| `dmit-stock` | state | Browser Rendering (DMIT cart stock) | Active |
 
 Sources live under `src/sources/examples/`, loaded from `src/sources/examples/index.ts`.
 

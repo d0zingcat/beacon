@@ -27,14 +27,14 @@ describe('formatNotification', () => {
 		expect(
 			formatNotification({
 				kind: 'state_change',
-				sourceId: 'vps-stock',
-				sourceName: 'VPS Stock Monitor',
+				sourceId: 'dmit-stock',
+				sourceName: 'DMIT VPS Stock',
 				itemId: 2,
 				title: 'Plan A',
 				url: 'https://example.com/vps',
 				diff: { available: { from: false, to: true } },
 			}),
-		).toContain('[beacon] 状态变化 · VPS Stock Monitor');
+		).toContain('[beacon] 状态变化 · DMIT VPS Stock');
 	});
 
 	it('formats crawl_error event', () => {

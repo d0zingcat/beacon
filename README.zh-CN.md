@@ -142,7 +142,7 @@ curl -X POST "https://beacon.example.workers.dev/sources/bedrock-models/run?sync
 | `cursor-changelog` | append | HTML 页面解析（cursor.com/changelog） | 已接入 |
 | `kiro-changelog` | append | RSS（kiro.dev/changelog） | 已接入 |
 | `bedrock-models` | append | Markdown 页面解析（AWS Bedrock 模型列表） | 已接入 |
-| `vps-stock` | state | Browser Rendering | 占位，待接入真实抓取 |
+| `dmit-stock` | state | Browser Rendering（DMIT 购物车页库存） | 已接入 |
 
 源在 `src/sources/examples/` 定义，由 `src/sources/examples/index.ts` 聚合加载。
 
