@@ -1,5 +1,7 @@
 # beacon 项目交接文档
 
+> [English README](./README.md) | [中文 README](./README.zh-CN.md)
+
 > 最后更新：2026-07-01  
 > 阶段：**首个数据源已接入**（`cursor-changelog` HTML 抓取 + append 落库），其余源仍为占位。
 
