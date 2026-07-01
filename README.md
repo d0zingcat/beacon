@@ -7,6 +7,10 @@
 - **append**：博客、changelog、新模型发布等只追加新条目的源
 - **state**：VPS 库存、价格、可用性等状态会反复变化的源
 
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button?paid=true)](https://deploy.workers.cloudflare.com/?url=https://github.com/d0zingcat/beacon&paid=true)
+
+> 本项目依赖 **D1**、**Queues** 与 **Browser Rendering**，需 [Workers 付费计划](https://developers.cloudflare.com/workers/platform/pricing/)。点击上方按钮后，Cloudflare 会自动 Fork 仓库、创建 D1 / Queue / Browser 绑定，并配置 Workers Builds 持续部署。
+
 ## 技术栈
 
 - Cloudflare Workers + TypeScript
@@ -15,12 +19,29 @@
 - Browser Rendering（`@cloudflare/playwright`）
 - Cron Triggers（定时调度）
 - Hono（HTTP API）
-- Telegram Bot（通知）
+- Telegram / 飞书（通知）
+
+## 一键部署（推荐）
+
+1. 点击顶部的 **Deploy to Cloudflare** 按钮
+2. 连接 GitHub 与 Cloudflare 账号，确认资源名称后完成首次部署
+3. 部署完成后，在 Cloudflare Dashboard → Worker → **Settings → Variables and Secrets** 中配置：
+   - `TELEGRAM_BOT_TOKEN` — Telegram Bot Token（可选，不配置则跳过通知）
+   - `TELEGRAM_CHAT_ID` — 接收通知的 Chat ID（可选）
+   - `FEISHU_WEBHOOK_URL` — 飞书群机器人 Webhook URL（可选）
+4. 若 D1 表未自动创建，在本地或 CI 中执行迁移：
+
+```bash
+pnpm exec wrangler d1 migrations apply beacon-db --remote
+```
+
+5. 访问 `https://<your-worker>.<account>.workers.dev/health` 验证部署
+
+部署按钮会自动解析 `wrangler.jsonc` 中的绑定（D1、Queues、Browser、Cron），并在你的账号下创建对应资源。详见 [Deploy to Cloudflare 文档](https://developers.cloudflare.com/workers/platform/deploy-buttons/)。
 
 ## 本地开发
 
 ```bash
-cd beacon
 pnpm install
 pnpm run cf-typegen
 pnpm run typecheck
@@ -30,20 +51,46 @@ pnpm run dev
 
 本地 `pnpm run dev` 使用 `wrangler.local.jsonc`（不含 Browser 绑定，便于本地 API 调试）。需要 Browser Rendering 时用 `pnpm run dev:remote`（需 `wrangler login`）。
 
-## 环境变量
-
-在 `wrangler.jsonc` 的 `vars` 中配置，或通过 `wrangler secret put` 设置：
-
-- `TELEGRAM_BOT_TOKEN` — Telegram Bot Token
-- `TELEGRAM_CHAT_ID` — 接收通知的 Chat ID
-- `FEISHU_WEBHOOK_URL` — 飞书群机器人 Webhook URL（可选）
-
-部署前需创建远程 D1 数据库并更新 `wrangler.jsonc` 中的 `database_id`：
+### 快速验证
 
 ```bash
+curl http://localhost:8787/health    # {"ok":true,"service":"beacon"}
+curl http://localhost:8787/sources   # 列出已注册源
+```
+
+## 手动部署
+
+适用于已有 Cloudflare 账号、希望自行管理资源的场景。
+
+```bash
+pnpm install
+pnpm exec wrangler login
+
+# 创建远程 D1（首次），将返回的 database_id 写入 wrangler.jsonc
 pnpm exec wrangler d1 create beacon-db
 pnpm exec wrangler d1 migrations apply beacon-db --remote
+
+# 配置通知（至少配置一种，或全部留空以禁用通知）
+pnpm exec wrangler secret put TELEGRAM_BOT_TOKEN
+pnpm exec wrangler secret put TELEGRAM_CHAT_ID
+pnpm exec wrangler secret put FEISHU_WEBHOOK_URL   # 可选
+
+pnpm run deploy
 ```
+
+首次 `deploy` 时 Wrangler 会自动创建 `beacon-crawl` 与 `beacon-crawl-dlq` 队列。
+
+## 环境变量
+
+在 `wrangler.jsonc` 的 `vars` 中配置明文变量，或通过 `wrangler secret put` 设置敏感值：
+
+| 变量 | 说明 | 必填 |
+|------|------|------|
+| `TELEGRAM_BOT_TOKEN` | Telegram Bot Token | 否 |
+| `TELEGRAM_CHAT_ID` | 接收通知的 Chat ID | 否 |
+| `FEISHU_WEBHOOK_URL` | 飞书群机器人 Webhook URL | 否 |
+
+至少配置一种通知渠道，新条目或状态变化才会推送。D1 / Queue / Browser 通过 wrangler bindings 注入，无需单独配置。
 
 ## API
 
@@ -58,6 +105,17 @@ pnpm exec wrangler d1 migrations apply beacon-db --remote
 | POST | `/sources/:id/run` | 手动触发爬取（入队） |
 | GET | `/runs` | 运行日志 |
 
+## 已注册数据源
+
+| ID | 模式 | 抓取方式 | 状态 |
+|----|------|----------|------|
+| `cursor-changelog` | append | HTML 页面解析（cursor.com/changelog） | 已接入 |
+| `kiro-changelog` | append | RSS（kiro.dev/changelog） | 已接入 |
+| `bedrock-models` | append | Markdown 页面解析（AWS Bedrock 模型列表） | 已接入 |
+| `vps-stock` | state | Browser Rendering | 占位，待接入真实抓取 |
+
+源在 `src/sources/examples/` 定义，由 `src/sources/examples/index.ts` 聚合加载。
+
 ## 新增数据源
 
 ### 1. append 型（RSS 示例）
@@ -65,7 +123,7 @@ pnpm exec wrangler d1 migrations apply beacon-db --remote
 在 `src/sources/examples/` 新建文件，使用 `createSource` + `createFeedExtractor`：
 
 ```ts
-import { createFeedExtractor } from '../extract/feed';
+import { createFeedExtractor } from '../../extract/feed';
 import { createSource } from '../factory';
 
 createSource(
@@ -76,10 +134,24 @@ createSource(
 
 在 `src/sources/examples/index.ts` 中添加 `import './my-feed'`。
 
-### 2. state 型（Browser 示例）
+### 2. append 型（网页 / Markdown 示例）
 
 ```ts
-import { createBrowserExtractor } from '../extract/browser';
+import { createWebpageExtractor } from '../../extract/webpage';
+import { createSource } from '../factory';
+
+createSource(
+  { id: 'my-page', name: 'My Page', mode: 'append', schedule: '0 * * * *' },
+  createWebpageExtractor({
+    url: 'https://example.com/changelog',
+    parse: (html) => [/* RawItem[] */],
+  }),
+);
+```
+
+### 3. state 型（Browser 示例）
+
+```ts
 import { createSource } from '../factory';
 
 createSource(
@@ -92,22 +164,35 @@ createSource(
       return prev.available !== next.available;
     },
   },
-  createBrowserExtractor({
-    extract: async (ctx, page) => {
-      await page.goto('https://example.com/vps');
+  {
+    kind: 'browser',
+    async extract(ctx) {
+      if (!ctx.browser) throw new Error('Browser binding is not available');
+      // 使用 ctx.browser 进行页面抓取，返回 RawItem[]
       return [];
     },
-  }),
+  },
 );
 ```
 
-## 占位源
+## 架构概览
 
-当前注册了三个占位源（返回空数据，待接入真实抓取逻辑）：
-
-- `cursor-changelog` — RSS / append
-- `bedrock-models` — Browser / append
-- `vps-stock` — Browser / state
+```
+Cron (scheduled) → 入队 CRAWL_QUEUE
+                      ↓
+Queue Consumer → runSource(sourceId)
+                      ↓
+              Source Registry + Extractor
+                      ↓
+         ┌────────────┴────────────┐
+    append 模式                  state 模式
+    hash 去重 → items           对比 state → states 快照
+         └────────────┬────────────┘
+                      ↓
+         Telegram / 飞书通知（可选）
+                      ↓
+              Hono API 查询
+```
 
 ## 目录结构
 
@@ -116,11 +201,18 @@ src/
 ├── index.ts          # Worker 入口（fetch / scheduled / queue）
 ├── router.ts         # Hono API
 ├── scheduler.ts      # Cron 调度
-├── sources/          # 源注册与基类
-├── examples/         # 示例/占位源
+├── sources/          # 源注册与工厂
+│   └── examples/     # 示例与已接入源
 ├── crawler/          # 爬取执行（runner / dedupe / state）
 ├── db/               # D1 仓储
 ├── notify/           # 通知（format / transport / dispatch）
 ├── extract/          # 抽取器（feed / webpage / browser）
 └── queue/            # Queue 消费
+migrations/           # D1 数据库迁移
 ```
+
+## 相关文档
+
+- [HANDOFF.md](./HANDOFF.md) — 项目交接与详细设计说明
+- [Cloudflare Workers 文档](https://developers.cloudflare.com/workers/)
+- [Deploy to Cloudflare 按钮](https://developers.cloudflare.com/workers/platform/deploy-buttons/)
