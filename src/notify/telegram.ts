@@ -2,6 +2,12 @@ import type { NotifyEvent } from '../sources/types';
 import type { Db } from '../db/client';
 import { markItemNotified } from '../db/repo';
 
+export interface CrawlErrorEvent {
+	sourceId: string;
+	sourceName: string;
+	error: string;
+}
+
 function isConfigured(env: Env): boolean {
 	return Boolean(env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID);
 }
@@ -26,6 +32,14 @@ function formatStateChangeEvent(event: NotifyEvent): string {
 	}
 	if (event.url) lines.push(event.url);
 	return lines.join('\n');
+}
+
+export function formatCrawlErrorEvent(event: CrawlErrorEvent): string {
+	return [
+		`[beacon] 抓取失败 · ${event.sourceName}`,
+		`source: ${event.sourceId}`,
+		event.error,
+	].join('\n');
 }
 
 async function sendTelegramMessage(env: Env, text: string): Promise<void> {
@@ -66,4 +80,18 @@ export async function dispatchNotifyEvents(
 			await markItemNotified(db, event.itemId);
 		}
 	}
+}
+
+export async function notifyCrawlError(
+	env: Env,
+	event: CrawlErrorEvent,
+	options?: { previousStatus?: string | null },
+): Promise<void> {
+	if (!isConfigured(env)) {
+		return;
+	}
+	if (options?.previousStatus === 'error') {
+		return;
+	}
+	await sendTelegramMessage(env, formatCrawlErrorEvent(event));
 }

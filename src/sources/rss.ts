@@ -30,7 +30,7 @@ export function createRssSource(
 	return source;
 }
 
-function parseRssFeed(xml: string): RawItem[] {
+export function parseRssFeed(xml: string): RawItem[] {
 	const items: RawItem[] = [];
 	const itemBlocks = xml.match(/<item[\s\S]*?<\/item>/gi) ?? [];
 	for (const block of itemBlocks) {

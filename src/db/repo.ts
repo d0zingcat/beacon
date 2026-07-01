@@ -109,6 +109,17 @@ export async function updateSourceRunStatus(
 	);
 }
 
+export async function getSourceLastStatus(
+	db: Db,
+	sourceId: string,
+): Promise<string | null> {
+	const row = await db.first<{ last_status: string | null }>(
+		`SELECT last_status FROM sources WHERE id = ? LIMIT 1`,
+		sourceId,
+	);
+	return row?.last_status ?? null;
+}
+
 export async function hasItemByHash(db: Db, sourceId: string, hash: string): Promise<boolean> {
 	const row = await db.first<{ id: number }>(
 		`SELECT id FROM items WHERE source_id = ? AND hash = ? LIMIT 1`,
