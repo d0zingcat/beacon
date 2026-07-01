@@ -21,14 +21,14 @@
 
 ```bash
 cd beacon
-npm install
-npm run cf-typegen
-npm run typecheck
-npx wrangler d1 migrations apply beacon-db --local
-npm run dev
+pnpm install
+pnpm run cf-typegen
+pnpm run typecheck
+pnpm exec wrangler d1 migrations apply beacon-db --local
+pnpm run dev
 ```
 
-本地 `npm run dev` 使用 `wrangler.local.jsonc`（不含 Browser 绑定，便于本地 API 调试）。需要 Browser Rendering 时用 `npm run dev:remote`（需 `wrangler login`）。
+本地 `pnpm run dev` 使用 `wrangler.local.jsonc`（不含 Browser 绑定，便于本地 API 调试）。需要 Browser Rendering 时用 `pnpm run dev:remote`（需 `wrangler login`）。
 
 ## 环境变量
 
@@ -40,8 +40,8 @@ npm run dev
 部署前需创建远程 D1 数据库并更新 `wrangler.jsonc` 中的 `database_id`：
 
 ```bash
-npx wrangler d1 create beacon-db
-npx wrangler d1 migrations apply beacon-db --remote
+pnpm exec wrangler d1 create beacon-db
+pnpm exec wrangler d1 migrations apply beacon-db --remote
 ```
 
 ## API

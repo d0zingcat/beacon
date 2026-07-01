@@ -251,7 +251,7 @@ export async function listItems(
 		`SELECT i.* FROM items i
      JOIN sources s ON s.id = i.source_id
      ${where}
-     ORDER BY i.id DESC
+     ORDER BY COALESCE(i.published_at, i.created_at) DESC, i.id DESC
      LIMIT ?`,
 		...params,
 	);

@@ -9,6 +9,7 @@ import {
 	listRunLogs,
 	listStatesByItemId,
 } from './db/repo';
+import { runSource } from './crawler/runner';
 import { enqueueSource } from './scheduler';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -84,6 +85,10 @@ app.post('/sources/:id/run', async (c) => {
 	const exists = listSources().some((source) => source.id === sourceId);
 	if (!exists) {
 		return c.json({ error: 'Source not found' }, 404);
+	}
+	if (c.req.query('sync') === '1') {
+		const result = await runSource(c.env, sourceId);
+		return c.json(result);
 	}
 	await enqueueSource(c.env, sourceId);
 	return c.json({ queued: true, sourceId });

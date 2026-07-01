@@ -1,7 +1,7 @@
 # beacon 项目交接文档
 
 > 最后更新：2026-07-01  
-> 阶段：**骨架完成**（可扩展源注册 + API + 调度 + 落库 + 通知框架），真实抓取逻辑未接入。
+> 阶段：**首个数据源已接入**（`cursor-changelog` HTML 抓取 + append 落库），其余源仍为占位。
 
 ## 1. 项目定位
 
@@ -103,7 +103,7 @@ Migration 文件：`migrations/0001_init.sql`
 
 | ID | 类型 | 模式 | 状态 |
 |----|------|------|------|
-| `cursor-changelog` | rss | append | 占位，`fetch` 返回 `[]` |
+| `cursor-changelog` | rss | append | 已接入 HTML 抓取（cursor.com/changelog） |
 | `bedrock-models` | browser | append | 占位，`fetch` 返回 `[]` |
 | `vps-stock` | browser | state | 占位，`fetch` 返回 `[]` |
 
@@ -126,19 +126,19 @@ Migration 文件：`migrations/0001_init.sql`
 
 ```bash
 cd beacon
-npm install
-npm run cf-typegen
-npm run typecheck
-npx wrangler d1 migrations apply beacon-db --local
-npm run dev          # 使用 wrangler.local.jsonc，仅 API 调试
-npm run dev:remote   # 含 Browser 绑定，需 wrangler login
+pnpm install
+pnpm run cf-typegen
+pnpm run typecheck
+pnpm exec wrangler d1 migrations apply beacon-db --local
+pnpm run dev          # 使用 wrangler.local.jsonc，仅 API 调试
+pnpm run dev:remote   # 含 Browser 绑定，需 wrangler login
 ```
 
 ### 验证命令（已通过）
 
 ```bash
-npm run typecheck                              # ✅
-npx wrangler d1 migrations apply beacon-db --local  # ✅
+pnpm run typecheck                              # ✅
+pnpm exec wrangler d1 migrations apply beacon-db --local  # ✅
 curl http://localhost:8787/health              # {"ok":true,"service":"beacon"}
 curl http://localhost:8787/sources             # 返回 3 个占位源
 ```
@@ -146,11 +146,11 @@ curl http://localhost:8787/sources             # 返回 3 个占位源
 ## 9. 部署 checklist
 
 - [ ] `wrangler login`
-- [ ] `npx wrangler d1 create beacon-db`，将返回的 `database_id` 写入 `wrangler.jsonc`
-- [ ] `npx wrangler d1 migrations apply beacon-db --remote`
+- [ ] `pnpm exec wrangler d1 create beacon-db`，将返回的 `database_id` 写入 `wrangler.jsonc`
+- [ ] `pnpm exec wrangler d1 migrations apply beacon-db --remote`
 - [ ] 创建 Queues：`beacon-crawl`、`beacon-crawl-dlq`（首次 deploy 时 wrangler 可能自动创建）
 - [ ] 配置 `TELEGRAM_BOT_TOKEN`、`TELEGRAM_CHAT_ID`（建议 `wrangler secret put`）
-- [ ] `npm run deploy`（使用 `wrangler.jsonc`）
+- [ ] `pnpm run deploy`（使用 `wrangler.jsonc`）
 
 ## 10. 新增数据源
 
@@ -220,6 +220,5 @@ D1 / Queue / Browser 通过 wrangler bindings 注入，非环境变量。
 
 ## 14. 联系人 / 上下文
 
-- 项目路径：`/Users/d0zingcat/Workspace/valley/beacon`
-- 父目录 `valley` 下为多个独立子项目，**beacon 当前无 git 远程**（首次 init 在本目录）
-- 原始需求：监控 Cursor 模型、AWS Bedrock changelog、VPS 库存等，落库 + API + Telegram 提醒
+- 仓库：`https://github.com/d0zingcat/beacon`
+- 原始需求：监控 Cursor changelog、AWS Bedrock 模型、VPS 库存等，落库 + API + Telegram 提醒
