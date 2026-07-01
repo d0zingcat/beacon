@@ -1,4 +1,4 @@
-import { launch } from '@cloudflare/playwright';
+import puppeteer from '@cloudflare/puppeteer';
 import type { Page, SourceContext } from '../sources/types';
 import type { RawItem } from '../sources/types';
 import type { Extractor } from './types';
@@ -23,7 +23,7 @@ export async function withBrowserPage<T>(
 	if (!ctx.browser) {
 		throw new Error('Browser binding is not available');
 	}
-	const browser = await launch(ctx.browser);
+	const browser = await puppeteer.launch(ctx.browser, { keep_alive: 120_000 });
 	try {
 		const page = await browser.newPage();
 		return await fn(page);

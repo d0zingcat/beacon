@@ -1,5 +1,29 @@
 import { describe, expect, it } from 'vitest';
-import { parseDmitStorePage } from './dmit-stock';
+import { parseDmitStorePage, parseQixiDmitStockPage } from './dmit-stock';
+
+const SAMPLE_QIXI_ROW_IN = `
+<tr class="in-stock-row" data-id="48" onclick="handleTableRowClick(this)">
+  <td class="px-4 py-3" data-label="状态"><span class="text-green-400">🟢 有货</span></td>
+  <td class="px-4 py-3 text-white font-medium" data-label="商品">HKG.AS3.T1.TINY</td>
+  <td class="px-4 py-3 text-gray-300" data-label="位置">Hong Kong</td>
+  <td class="px-4 py-3 text-gray-300" data-label="配置">1核 / 1G / 20G</td>
+  <td class="px-4 py-3 text-white" data-label="价格"><span class="text-green-400 font-bold">$39.9/月</span></td>
+  <td class="px-4 py-3" data-label="操作">
+    <a href="https://www.dmit.io/aff.php?aff=1098&amp;pid=201" target="_blank" class="btn btn-sm btn-primary">购买</a>
+  </td>
+</tr>`;
+
+const SAMPLE_QIXI_ROW_OUT = `
+<tr class="out-stock-row" data-id="70" onclick="handleTableRowClick(this)">
+  <td class="px-4 py-3" data-label="状态"><span class="text-red-400">🔴 缺货</span></td>
+  <td class="px-4 py-3 text-white font-medium" data-label="商品">LAX.AN5.Pro.TINY</td>
+  <td class="px-4 py-3 text-gray-300" data-label="位置">Los Angeles</td>
+  <td class="px-4 py-3 text-gray-300" data-label="配置">1核 / 2G / 20G</td>
+  <td class="px-4 py-3 text-white" data-label="价格"><span class="text-green-400 font-bold">$12.98/月</span></td>
+  <td class="px-4 py-3" data-label="操作">
+    <a href="https://www.dmit.io/aff.php?aff=1098&amp;pid=100" target="_blank" class="btn btn-sm btn-primary">购买</a>
+  </td>
+</tr>`;
 
 const SAMPLE_IN_STOCK = `
 LAX.AN5.T1.V2C2G
@@ -42,6 +66,37 @@ USD
 
 / Annually
 `;
+
+describe('parseQixiDmitStockPage', () => {
+	it('parses in-stock and out-of-stock table rows', () => {
+		const items = parseQixiDmitStockPage(SAMPLE_QIXI_ROW_IN + SAMPLE_QIXI_ROW_OUT);
+
+		expect(items).toEqual([
+			{
+				externalId: 'HKG.AS3.T1.TINY',
+				title: 'HKG.AS3.T1.TINY',
+				url: 'https://www.dmit.io/aff.php?aff=1098&pid=201',
+				summary: '$39.9/月',
+				state: {
+					available: true,
+					price: '$39.9/月',
+					source: 'stock.qixi.me',
+				},
+			},
+			{
+				externalId: 'LAX.AN5.Pro.TINY',
+				title: 'LAX.AN5.Pro.TINY',
+				url: 'https://www.dmit.io/aff.php?aff=1098&pid=100',
+				summary: '缺货',
+				state: {
+					available: false,
+					price: '$12.98/月',
+					source: 'stock.qixi.me',
+				},
+			},
+		]);
+	});
+});
 
 describe('parseDmitStorePage', () => {
 	it('parses in-stock product with monthly price', () => {

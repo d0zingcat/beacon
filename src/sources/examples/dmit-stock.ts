@@ -1,11 +1,53 @@
-import { createBrowserExtractor } from '../../extract/browser';
+import { createWebpageExtractor } from '../../extract/webpage';
 import { createSource } from '../factory';
 import type { RawItem } from '../types';
 
-export const DMIT_STORE_URL = 'https://www.dmit.io/cart.php';
-const OUT_OF_STOCK_TEXT = 'Out of Stock';
+/** Third-party DMIT stock aggregator (Dmit 官网对自动化浏览器有 bot 验证). */
+export const QIXI_DMIT_STOCK_URL = 'https://stock.qixi.me/';
+export const OUT_OF_STOCK_TEXT = 'Out of Stock';
 const PRODUCT_NAME_RE = /^(?:LAX|HKG|TYO)\.[A-Za-z0-9.]+$/;
+const TABLE_ROW_RE = /<tr class="(in-stock-row|out-stock-row)"[\s\S]*?<\/tr>/g;
 
+export function parseQixiDmitStockPage(html: string): RawItem[] {
+	const items: RawItem[] = [];
+
+	for (const rowMatch of html.matchAll(TABLE_ROW_RE)) {
+		const row = rowMatch[0];
+		const available = rowMatch[1] === 'in-stock-row';
+		const nameMatch = row.match(/data-label="商品"[^>]*>([^<]+)</);
+		if (!nameMatch) {
+			continue;
+		}
+
+		const title = nameMatch[1].trim();
+		if (!PRODUCT_NAME_RE.test(title)) {
+			continue;
+		}
+
+		const priceMatch = row.match(
+			/data-label="价格"[^>]*>[\s\S]*?<span[^>]*>([^<]+)<\/span>/,
+		);
+		const price = priceMatch?.[1]?.trim();
+		const urlMatch = row.match(/href="(https:\/\/www\.dmit\.io\/[^"]+)"/);
+		const url = urlMatch?.[1]?.replace(/&amp;/g, '&');
+
+		items.push({
+			externalId: title,
+			title,
+			url: url ?? QIXI_DMIT_STOCK_URL,
+			summary: available ? (price ?? '有货') : '缺货',
+			state: {
+				available,
+				price,
+				source: 'stock.qixi.me',
+			},
+		});
+	}
+
+	return items;
+}
+
+/** Parse Dmit store listing text (used when scraping cart.php directly). */
 export function parseDmitStorePage(text: string): RawItem[] {
 	const lines = text
 		.split('\n')
@@ -47,7 +89,7 @@ export function parseDmitStorePage(text: string): RawItem[] {
 		items.push({
 			externalId: name,
 			title: name,
-			url: DMIT_STORE_URL,
+			url: 'https://www.dmit.io/cart.php',
 			summary,
 			state: {
 				available,
@@ -70,18 +112,16 @@ createSource(
 			return prev.available !== next.available;
 		},
 	},
-	createBrowserExtractor({
-		async extract(_ctx, page) {
-			await page.goto(DMIT_STORE_URL, {
-				waitUntil: 'domcontentloaded',
-				timeout: 90_000,
-			});
-			await page.getByText('LAX.AN5').first().waitFor({ timeout: 60_000 });
-
-			const text = await page.locator('body').innerText();
-			const items = parseDmitStorePage(text);
+	createWebpageExtractor({
+		url: QIXI_DMIT_STOCK_URL,
+		headers: {
+			'user-agent': 'beacon/1.0 (+https://github.com/d0zingcat/beacon)',
+			accept: 'text/html,application/xhtml+xml',
+		},
+		parse(html) {
+			const items = parseQixiDmitStockPage(html);
 			if (items.length === 0) {
-				throw new Error('DMIT store page parsed zero products');
+				throw new Error('No DMIT products parsed from stock.qixi.me');
 			}
 			return items;
 		},

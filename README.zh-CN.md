@@ -18,7 +18,7 @@
 - Cloudflare Workers + TypeScript
 - D1（SQLite）
 - Queues（爬取任务解耦）
-- Browser Rendering（`@cloudflare/playwright`）
+- Browser Rendering（`@cloudflare/puppeteer`）
 - Cron Triggers（定时调度）
 - Hono（HTTP API）
 - Telegram / 飞书（通知）
@@ -142,7 +142,7 @@ curl -X POST "https://beacon.example.workers.dev/sources/bedrock-models/run?sync
 | `cursor-changelog` | append | HTML 页面解析（cursor.com/changelog） | 已接入 |
 | `kiro-changelog` | append | RSS（kiro.dev/changelog） | 已接入 |
 | `bedrock-models` | append | Markdown 页面解析（AWS Bedrock 模型列表） | 已接入 |
-| `dmit-stock` | state | Browser Rendering（DMIT 购物车页库存） | 已接入 |
+| `dmit-stock` | state | 网页解析（stock.qixi.me 库存聚合） | 已接入 |
 
 源在 `src/sources/examples/` 定义，由 `src/sources/examples/index.ts` 聚合加载。
 
