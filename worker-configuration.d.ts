@@ -3,6 +3,7 @@
 interface Env {
 	TELEGRAM_BOT_TOKEN: "";
 	TELEGRAM_CHAT_ID: "";
+	FEISHU_WEBHOOK_URL: "";
 	DB: D1Database;
 	CRAWL_QUEUE: Queue;
 	BROWSER: Fetcher;

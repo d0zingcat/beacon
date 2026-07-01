@@ -1,4 +1,5 @@
-import type { NotifyEvent, RawItem } from '../sources/types';
+import type { RawItem } from '../sources/types';
+import type { NotificationEvent } from '../notify/types';
 import { getSource } from '../sources/registry';
 import { createDb } from '../db/client';
 import {
@@ -12,7 +13,7 @@ import {
 } from '../db/repo';
 import { hashAppendItem } from './dedupe';
 import { processStateItem, toStateChangeEvent } from './state';
-import { dispatchNotifyEvents, notifyCrawlError } from '../notify/telegram';
+import { dispatchNotifications } from '../notify/dispatch';
 
 export interface RunResult {
 	sourceId: string;
@@ -32,7 +33,7 @@ async function processAppendItem(
 	source: NonNullable<ReturnType<typeof getSource>>,
 	raw: RawItem,
 	now: number,
-): Promise<NotifyEvent | null> {
+): Promise<NotificationEvent | null> {
 	const normalized = normalizeItem(source, raw);
 	const hash = await hashAppendItem({
 		sourceId: source.id,
@@ -61,7 +62,7 @@ async function processAppendItem(
 	});
 
 	return {
-		type: 'append',
+		kind: 'append',
 		sourceId: source.id,
 		sourceName: source.name,
 		itemId,
@@ -74,11 +75,14 @@ async function processAppendItem(
 export async function runSource(env: Env, sourceId: string): Promise<RunResult> {
 	const source = getSource(sourceId);
 	if (!source) {
-		await notifyCrawlError(env, {
-			sourceId,
-			sourceName: sourceId,
-			error: `Source not found: ${sourceId}`,
-		});
+		await dispatchNotifications(env, createDb(env), [
+			{
+				kind: 'crawl_error',
+				sourceId,
+				sourceName: sourceId,
+				error: `Source not found: ${sourceId}`,
+			},
+		]);
 		return {
 			sourceId,
 			itemsNew: 0,
@@ -105,7 +109,7 @@ export async function runSource(env: Env, sourceId: string): Promise<RunResult> 
 	let itemsNew = 0;
 	let stateChanges = 0;
 	let itemsTotal = 0;
-	const notifyEvents: NotifyEvent[] = [];
+	const notifyEvents: NotificationEvent[] = [];
 
 	try {
 		const rawItems = await source.fetch({
@@ -150,7 +154,7 @@ export async function runSource(env: Env, sourceId: string): Promise<RunResult> 
 			}
 		}
 
-		await dispatchNotifyEvents(env, db, notifyEvents);
+		await dispatchNotifications(env, db, notifyEvents);
 		await finishRunLog(db, {
 			runId,
 			status: 'ok',
@@ -180,15 +184,15 @@ export async function runSource(env: Env, sourceId: string): Promise<RunResult> 
 			finishedAt: Date.now(),
 		});
 		await updateSourceRunStatus(db, sourceId, 'error', Date.now());
-		await notifyCrawlError(
-			env,
+		await dispatchNotifications(env, db, [
 			{
+				kind: 'crawl_error',
 				sourceId: source.id,
 				sourceName: source.name,
 				error: message,
+				suppress: previousStatus === 'error',
 			},
-			{ previousStatus },
-		);
+		]);
 		return {
 			sourceId,
 			itemsNew,

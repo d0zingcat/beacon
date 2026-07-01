@@ -1,6 +1,6 @@
-import { createBrowserSource } from '../browser';
+import { createSource } from '../factory';
 
-createBrowserSource(
+createSource(
 	{
 		id: 'bedrock-models',
 		name: 'AWS Bedrock Models',
@@ -8,10 +8,13 @@ createBrowserSource(
 		schedule: '0 */6 * * *',
 	},
 	{
-		url: 'https://docs.aws.amazon.com/bedrock/latest/userguide/models-supported.html',
-	},
-	async () => {
-		// TODO: 用 Browser Rendering 解析 Bedrock 模型列表页
-		return [];
+		kind: 'browser',
+		async extract(ctx) {
+			if (!ctx.browser) {
+				throw new Error('Browser binding is not available');
+			}
+			// TODO: 用 Browser Rendering 解析 Bedrock 模型列表页
+			return [];
+		},
 	},
 );

@@ -1,6 +1,6 @@
-import { createBrowserSource } from '../browser';
+import { createSource } from '../factory';
 
-createBrowserSource(
+createSource(
 	{
 		id: 'vps-stock',
 		name: 'VPS Stock Monitor',
@@ -11,10 +11,13 @@ createBrowserSource(
 		},
 	},
 	{
-		url: 'https://example.com/vps',
-	},
-	async () => {
-		// TODO: 用 Browser Rendering 抓取 VPS 库存/价格
-		return [];
+		kind: 'browser',
+		async extract(ctx) {
+			if (!ctx.browser) {
+				throw new Error('Browser binding is not available');
+			}
+			// TODO: 用 Browser Rendering 抓取 VPS 库存/价格
+			return [];
+		},
 	},
 );
