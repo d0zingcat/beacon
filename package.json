@@ -5,6 +5,7 @@
 	"packageManager": "pnpm@11.9.0",
 	"scripts": {
 		"deploy": "wrangler deploy",
+		"deploy:prod": "node scripts/generate-deploy-config.mjs && wrangler deploy --config .wrangler/deploy/wrangler.jsonc",
 		"dev": "wrangler dev --config wrangler.local.jsonc",
 		"start": "wrangler dev",
 		"test": "vitest",
