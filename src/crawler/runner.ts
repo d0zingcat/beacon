@@ -4,6 +4,7 @@ import { getSource } from '../sources/registry';
 import { createDb } from '../db/client';
 import {
 	finishRunLog,
+	getItemByHash,
 	getSourceLastStatus,
 	hasItemByHash,
 	insertItem,
@@ -15,17 +16,40 @@ import { hashAppendItem } from './dedupe';
 import { processStateItem, toStateChangeEvent } from './state';
 import { dispatchNotifications } from '../notify/dispatch';
 
+export interface RunOptions {
+	/** Notify for every item fetched in this run, not only new/changed ones. */
+	forceNotify?: boolean;
+}
+
 export interface RunResult {
 	sourceId: string;
 	itemsNew: number;
 	itemsTotal: number;
+	itemsNotified: number;
 	stateChanges: number;
+	forceNotify: boolean;
 	status: 'ok' | 'error';
 	error?: string;
 }
 
 function normalizeItem(source: NonNullable<ReturnType<typeof getSource>>, raw: RawItem) {
 	return source.normalize ? source.normalize(raw) : raw;
+}
+
+function toAppendEvent(
+	source: NonNullable<ReturnType<typeof getSource>>,
+	itemId: number,
+	normalized: ReturnType<typeof normalizeItem>,
+): NotificationEvent {
+	return {
+		kind: 'append',
+		sourceId: source.id,
+		sourceName: source.name,
+		itemId,
+		title: normalized.title,
+		url: normalized.url,
+		summary: normalized.summary,
+	};
 }
 
 async function processAppendItem(
@@ -61,18 +85,58 @@ async function processAppendItem(
 		now,
 	});
 
-	return {
-		kind: 'append',
+	return toAppendEvent(source, itemId, normalized);
+}
+
+async function processAppendItemForceNotify(
+	db: ReturnType<typeof createDb>,
+	source: NonNullable<ReturnType<typeof getSource>>,
+	raw: RawItem,
+	now: number,
+): Promise<{ event: NotificationEvent; inserted: boolean }> {
+	const normalized = normalizeItem(source, raw);
+	const hash = await hashAppendItem({
 		sourceId: source.id,
-		sourceName: source.name,
-		itemId,
+		externalId: normalized.externalId,
 		title: normalized.title,
 		url: normalized.url,
 		summary: normalized.summary,
+		content: normalized.content,
+	});
+
+	const existing = await getItemByHash(db, source.id, hash);
+	if (existing) {
+		return {
+			event: toAppendEvent(source, existing.id, normalized),
+			inserted: false,
+		};
+	}
+
+	const itemId = await insertItem(db, {
+		sourceId: source.id,
+		externalId: normalized.externalId,
+		title: normalized.title,
+		url: normalized.url,
+		summary: normalized.summary,
+		content: normalized.content,
+		publishedAt: normalized.publishedAt ? Date.parse(normalized.publishedAt) : undefined,
+		hash,
+		rawJson: raw.raw ? JSON.stringify(raw.raw) : undefined,
+		now,
+	});
+
+	return {
+		event: toAppendEvent(source, itemId, normalized),
+		inserted: true,
 	};
 }
 
-export async function runSource(env: Env, sourceId: string): Promise<RunResult> {
+export async function runSource(
+	env: Env,
+	sourceId: string,
+	options: RunOptions = {},
+): Promise<RunResult> {
+	const forceNotify = options.forceNotify === true;
 	const source = getSource(sourceId);
 	if (!source) {
 		await dispatchNotifications(env, createDb(env), [
@@ -87,7 +151,9 @@ export async function runSource(env: Env, sourceId: string): Promise<RunResult> 
 			sourceId,
 			itemsNew: 0,
 			itemsTotal: 0,
+			itemsNotified: 0,
 			stateChanges: 0,
+			forceNotify,
 			status: 'error',
 			error: `Source not found: ${sourceId}`,
 		};
@@ -121,10 +187,18 @@ export async function runSource(env: Env, sourceId: string): Promise<RunResult> 
 
 		if (source.mode === 'append') {
 			for (const raw of rawItems) {
-				const event = await processAppendItem(db, source, raw, now);
-				if (event) {
-					itemsNew += 1;
+				if (forceNotify) {
+					const { event, inserted } = await processAppendItemForceNotify(db, source, raw, now);
+					if (inserted) {
+						itemsNew += 1;
+					}
 					notifyEvents.push(event);
+				} else {
+					const event = await processAppendItem(db, source, raw, now);
+					if (event) {
+						itemsNew += 1;
+						notifyEvents.push(event);
+					}
 				}
 			}
 		} else {
@@ -142,17 +216,21 @@ export async function runSource(env: Env, sourceId: string): Promise<RunResult> 
 				});
 				if (result.changed) {
 					stateChanges += 1;
+				}
+				if (result.changed || forceNotify) {
 					notifyEvents.push(
 						toStateChangeEvent(source, {
 							itemId: result.itemId,
 							title: raw.title,
 							url: raw.url,
-							diff: result.diff,
+							diff: result.diff ?? (forceNotify ? { snapshot: raw.state } : undefined),
 						}),
 					);
 				}
 			}
 		}
+
+		const itemsNotified = notifyEvents.length;
 
 		await dispatchNotifications(env, db, notifyEvents);
 		await finishRunLog(db, {
@@ -169,7 +247,9 @@ export async function runSource(env: Env, sourceId: string): Promise<RunResult> 
 			sourceId,
 			itemsNew,
 			itemsTotal,
+			itemsNotified,
 			stateChanges,
+			forceNotify,
 			status: 'ok',
 		};
 	} catch (error) {
@@ -197,7 +277,9 @@ export async function runSource(env: Env, sourceId: string): Promise<RunResult> 
 			sourceId,
 			itemsNew,
 			itemsTotal,
+			itemsNotified: 0,
 			stateChanges,
+			forceNotify,
 			status: 'error',
 			error: message,
 		};

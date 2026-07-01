@@ -129,6 +129,18 @@ export async function hasItemByHash(db: Db, sourceId: string, hash: string): Pro
 	return row !== null;
 }
 
+export async function getItemByHash(
+	db: Db,
+	sourceId: string,
+	hash: string,
+): Promise<ItemRow | null> {
+	return db.first<ItemRow>(
+		`SELECT * FROM items WHERE source_id = ? AND hash = ? LIMIT 1`,
+		sourceId,
+		hash,
+	);
+}
+
 export async function getItemByExternalId(
 	db: Db,
 	sourceId: string,

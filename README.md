@@ -129,8 +129,16 @@ Configure at least one channel for notifications. D1 / Queue / Browser use wrang
 | GET | `/items/:id` | Item detail |
 | GET | `/items/:id/states` | State history (state mode) |
 | GET | `/items/:id/states/latest` | Latest state |
-| POST | `/sources/:id/run` | Trigger crawl (enqueue; `?sync=1` for inline) |
+| POST | `/sources/:id/run` | Trigger crawl (enqueue; `?sync=1` inline; `?forceNotify=1` notify all fetched items) |
 | GET | `/runs` | Run logs |
+
+To verify notifications when there are no new items, run with `forceNotify=1` (sends one message per fetched item):
+
+```bash
+curl -X POST "https://beacon.example.workers.dev/sources/bedrock-models/run?sync=1&forceNotify=1"
+```
+
+Response includes `itemsNotified` (count of messages sent this run).
 
 ## Registered sources
 

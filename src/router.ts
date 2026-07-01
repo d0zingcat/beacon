@@ -96,12 +96,13 @@ app.post('/sources/:id/run', async (c) => {
 	if (!exists) {
 		return c.json({ error: 'Source not found' }, 404);
 	}
+	const forceNotify = c.req.query('forceNotify') === '1' || c.req.query('forceNotify') === 'true';
 	if (c.req.query('sync') === '1') {
-		const result = await runSource(c.env, sourceId);
+		const result = await runSource(c.env, sourceId, { forceNotify });
 		return c.json(result);
 	}
-	await enqueueSource(c.env, sourceId);
-	return c.json({ queued: true, sourceId });
+	await enqueueSource(c.env, sourceId, { forceNotify });
+	return c.json({ queued: true, sourceId, forceNotify });
 });
 
 app.get('/runs', async (c) => {

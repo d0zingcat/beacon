@@ -13,9 +13,14 @@ export async function runScheduler(env: Env): Promise<void> {
 	);
 }
 
-export async function enqueueSource(env: Env, sourceId: string): Promise<void> {
+export async function enqueueSource(
+	env: Env,
+	sourceId: string,
+	options?: { forceNotify?: boolean },
+): Promise<void> {
 	await env.CRAWL_QUEUE.send({
 		sourceId,
 		triggeredAt: Date.now(),
+		forceNotify: options?.forceNotify,
 	});
 }

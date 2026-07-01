@@ -124,8 +124,16 @@ D1_DATABASE_ID=<your-d1-uuid> pnpm run deploy:prod
 | GET | `/items/:id` | 单条详情 |
 | GET | `/items/:id/states` | 状态历史（state 模式） |
 | GET | `/items/:id/states/latest` | 最新状态 |
-| POST | `/sources/:id/run` | 手动触发爬取（入队） |
+| POST | `/sources/:id/run` | 手动触发爬取（入队；`?sync=1` 同步执行；`?forceNotify=1` 对本次拉取的全部条目发通知） |
 | GET | `/runs` | 运行日志 |
+
+无新条目时验证通知渠道，可加 `forceNotify=1`（对本次拉取的每条数据各发一条消息）：
+
+```bash
+curl -X POST "https://beacon.example.workers.dev/sources/bedrock-models/run?sync=1&forceNotify=1"
+```
+
+响应中的 `itemsNotified` 表示本次实际发送的通知条数。
 
 ## 已注册数据源
 
