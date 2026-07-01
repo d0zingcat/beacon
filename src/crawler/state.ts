@@ -7,7 +7,7 @@ import {
 	updateItemState,
 } from '../db/repo';
 import { hashStateEntity, hashStateValue } from './dedupe';
-import type { NotifyEvent } from '../sources/types';
+import type { NotificationEvent } from '../notify/types';
 
 export interface StateProcessResult {
 	itemId: number;
@@ -113,9 +113,9 @@ export function toStateChangeEvent(
 		url?: string;
 		diff?: Record<string, unknown>;
 	},
-): NotifyEvent {
+): NotificationEvent {
 	return {
-		type: 'state_change',
+		kind: 'state_change',
 		sourceId: source.id,
 		sourceName: source.name,
 		itemId: input.itemId,

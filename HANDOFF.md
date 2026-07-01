@@ -215,6 +215,7 @@ createBrowserSource(
 |------|------|
 | `TELEGRAM_BOT_TOKEN` | Telegram Bot Token |
 | `TELEGRAM_CHAT_ID` | 接收通知的 Chat ID |
+| `FEISHU_WEBHOOK_URL` | 飞书群机器人 Webhook URL（可选） |
 
 D1 / Queue / Browser 通过 wrangler bindings 注入，非环境变量。
 

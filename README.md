@@ -36,6 +36,7 @@ pnpm run dev
 
 - `TELEGRAM_BOT_TOKEN` — Telegram Bot Token
 - `TELEGRAM_CHAT_ID` — 接收通知的 Chat ID
+- `FEISHU_WEBHOOK_URL` — 飞书群机器人 Webhook URL（可选）
 
 部署前需创建远程 D1 数据库并更新 `wrangler.jsonc` 中的 `database_id`：
 
@@ -61,14 +62,15 @@ pnpm exec wrangler d1 migrations apply beacon-db --remote
 
 ### 1. append 型（RSS 示例）
 
-在 `src/sources/examples/` 新建文件，使用 `createRssSource`：
+在 `src/sources/examples/` 新建文件，使用 `createSource` + `createFeedExtractor`：
 
 ```ts
-import { createRssSource } from '../rss';
+import { createFeedExtractor } from '../extract/feed';
+import { createSource } from '../factory';
 
-createRssSource(
-  { id: 'my-feed', name: 'My Feed', schedule: '0 * * * *' },
-  { feedUrl: 'https://example.com/rss.xml' },
+createSource(
+  { id: 'my-feed', name: 'My Feed', mode: 'append', schedule: '0 * * * *' },
+  createFeedExtractor({ feedUrl: 'https://example.com/rss.xml' }),
 );
 ```
 
@@ -77,9 +79,10 @@ createRssSource(
 ### 2. state 型（Browser 示例）
 
 ```ts
-import { createBrowserSource } from '../browser';
+import { createBrowserExtractor } from '../extract/browser';
+import { createSource } from '../factory';
 
-createBrowserSource(
+createSource(
   {
     id: 'my-stock',
     name: 'My VPS Stock',
@@ -89,14 +92,12 @@ createBrowserSource(
       return prev.available !== next.available;
     },
   },
-  { url: 'https://example.com/vps' },
-  async (ctx, config) => {
-    // 使用 withBrowserPage + Playwright API 抓取
-    return withBrowserPage(ctx, async (page) => {
-      await page.goto(config.url);
+  createBrowserExtractor({
+    extract: async (ctx, page) => {
+      await page.goto('https://example.com/vps');
       return [];
-    });
-  },
+    },
+  }),
 );
 ```
 
@@ -119,6 +120,7 @@ src/
 ├── examples/         # 示例/占位源
 ├── crawler/          # 爬取执行（runner / dedupe / state）
 ├── db/               # D1 仓储
-├── notify/           # Telegram 通知
+├── notify/           # 通知（format / transport / dispatch）
+├── extract/          # 抽取器（feed / webpage / browser）
 └── queue/            # Queue 消费
 ```

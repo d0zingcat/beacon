@@ -1,4 +1,5 @@
-import { createRssSource } from '../rss';
+import { createWebpageExtractor } from '../../extract/webpage';
+import { createSource } from '../factory';
 import type { RawItem } from '../types';
 
 const CHANGELOG_URL = 'https://cursor.com/changelog';
@@ -56,25 +57,19 @@ function decodeHtml(value: string): string {
 		.replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)));
 }
 
-createRssSource(
+createSource(
 	{
 		id: 'cursor-changelog',
 		name: 'Cursor Changelog',
+		mode: 'append',
 		schedule: '0 * * * *',
 	},
-	{
-		feedUrl: CHANGELOG_URL,
-	},
-	async (ctx, config) => {
-		const response = await ctx.fetch(config.feedUrl, {
-			headers: {
-				'user-agent': 'beacon/1.0 (+https://github.com/d0zingcat/beacon)',
-				accept: 'text/html',
-			},
-		});
-		if (!response.ok) {
-			throw new Error(`Changelog fetch failed: ${response.status} ${response.statusText}`);
-		}
-		return parseCursorChangelogHtml(await response.text());
-	},
+	createWebpageExtractor({
+		url: CHANGELOG_URL,
+		headers: {
+			'user-agent': 'beacon/1.0 (+https://github.com/d0zingcat/beacon)',
+			accept: 'text/html',
+		},
+		parse: parseCursorChangelogHtml,
+	}),
 );
