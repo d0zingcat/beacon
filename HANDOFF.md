@@ -192,7 +192,7 @@ createBrowserSource(
 
 ### 待办（按优先级）
 
-1. 接入 `cursor-changelog` 真实 RSS 抓取，跑通 append 全流程 + Telegram
+1. ~~接入 `cursor-changelog` 真实抓取，跑通 append 全流程~~（已完成；Telegram 待配置）
 2. 配置远程 D1 并部署
 3. 接入 `bedrock-models`（Browser / append）
 4. 接入 `vps-stock`（Browser / state）
