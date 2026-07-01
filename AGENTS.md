@@ -21,9 +21,3 @@ Guidance for humans and coding agents working in this repository.
 5. Production deploy runs automatically when the PR is merged to `main` (see `.github/workflows/deploy.yml`).
 
 Direct pushes to `main` bypass review and should only happen in emergencies—and should be avoided when an agent is making changes.
-
-## 中文摘要
-
-- **禁止**将代码直接 push 到 `main`。
-- **必须**通过 feature branch + Pull Request 合并。
-- 合并后由 GitHub Actions 自动部署到 Cloudflare Workers。
