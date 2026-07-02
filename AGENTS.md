@@ -7,8 +7,19 @@ Guidance for humans and coding agents working in this repository.
 Write **documentation and commit messages in English**.
 
 - **Documentation**: `AGENTS.md`, `README.md`, code comments, PR titles/descriptions, and design docs.
-- **Commit messages**: subject line and body in English; use imperative mood (e.g. `Add squash merge workflow to AGENTS.md`).
+- **Commit messages**: subject line and body in English; use imperative mood (`Add …`, `Fix …`, `Update …`).
+- **Source comments**: English unless explaining locale-specific behavior.
 - **User-facing copy** in notifications or UI may stay in the language appropriate for the audience (e.g. Chinese Telegram messages).
+
+Examples:
+
+```
+# Good
+Add squash merge workflow to AGENTS.md
+
+# Bad
+为 AGENTS.md 添加 squash merge 工作流
+```
 
 ## Git workflow
 
