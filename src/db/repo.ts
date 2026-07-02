@@ -175,6 +175,44 @@ export async function insertItem(db: Db, input: InsertItemInput): Promise<number
 	return Number(result.meta.last_row_id);
 }
 
+export async function updateAppendItem(
+	db: Db,
+	input: {
+		itemId: number;
+		title: string;
+		url?: string;
+		summary?: string;
+		content?: string;
+		publishedAt?: number;
+		hash: string;
+		rawJson?: string;
+		now: number;
+	},
+): Promise<void> {
+	await db.run(
+		`UPDATE items SET
+      title = ?,
+      url = ?,
+      summary = ?,
+      content = ?,
+      published_at = ?,
+      hash = ?,
+      raw_json = ?,
+      notified = 0,
+      updated_at = ?
+     WHERE id = ?`,
+		input.title,
+		input.url ?? null,
+		input.summary ?? null,
+		input.content ?? null,
+		input.publishedAt ?? null,
+		input.hash,
+		input.rawJson ?? null,
+		input.now,
+		input.itemId,
+	);
+}
+
 export async function updateItemState(
 	db: Db,
 	input: {
