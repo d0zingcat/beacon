@@ -7,7 +7,7 @@ const SAMPLE_HTML = '<html><body><h1>Title</h1></body></html>';
 describe('createWebpageExtractor', () => {
 	it('fetches page and runs parser', async () => {
 		const parse = vi.fn(
-			(): RawItem[] => [
+			(_html: string, _ctx: { env: Env; fetch: typeof fetch }): RawItem[] => [
 				{
 					externalId: 'title',
 					url: 'https://example.com/title',
@@ -22,13 +22,14 @@ describe('createWebpageExtractor', () => {
 			parse,
 		});
 
-		const items = await extractor.extract({ env: {} as Env, fetch });
+		const ctx = { env: {} as Env, fetch };
+		const items = await extractor.extract(ctx);
 
 		expect(extractor.kind).toBe('webpage');
 		expect(fetch).toHaveBeenCalledWith('https://example.com/page', {
 			headers: { accept: 'text/html' },
 		});
-		expect(parse).toHaveBeenCalledWith(SAMPLE_HTML);
+		expect(parse).toHaveBeenCalledWith(SAMPLE_HTML, ctx);
 		expect(items).toEqual([
 			{
 				externalId: 'title',
@@ -44,7 +45,7 @@ describe('createWebpageExtractor', () => {
 			.mockResolvedValue(new Response('error', { status: 404, statusText: 'Not Found' }));
 		const extractor = createWebpageExtractor({
 			url: 'https://example.com/missing',
-			parse: () => [],
+			parse: (_html, _ctx) => [],
 		});
 
 		await expect(extractor.extract({ env: {} as Env, fetch })).rejects.toThrow(

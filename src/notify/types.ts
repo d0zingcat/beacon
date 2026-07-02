@@ -15,6 +15,7 @@ export type NotificationEvent =
 			itemId: number;
 			title: string;
 			url?: string;
+			summary?: string;
 			diff?: Record<string, unknown>;
 	  }
 	| {

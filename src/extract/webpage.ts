@@ -1,10 +1,10 @@
-import type { RawItem } from '../sources/types';
+import type { RawItem, SourceContext } from '../sources/types';
 import type { Extractor } from './types';
 
 export interface WebpageExtractorConfig {
 	url: string;
 	headers?: Record<string, string>;
-	parse: (html: string) => RawItem[];
+	parse: (html: string, ctx: SourceContext) => RawItem[];
 }
 
 export function createWebpageExtractor(config: WebpageExtractorConfig): Extractor {
@@ -17,7 +17,7 @@ export function createWebpageExtractor(config: WebpageExtractorConfig): Extracto
 			if (!response.ok) {
 				throw new Error(`Webpage fetch failed: ${response.status} ${response.statusText}`);
 			}
-			return config.parse(await response.text());
+			return config.parse(await response.text(), ctx);
 		},
 	};
 }

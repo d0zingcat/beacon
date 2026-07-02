@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { parseDmitStorePage, parseQixiDmitStockPage } from './dmit-stock';
+import {
+	parseDmitStorePage,
+	parseQixiDmitStockPage,
+	resolveDmitAffId,
+	rewriteDmitAffUrl,
+} from './dmit-stock';
 
 const SAMPLE_QIXI_ROW_IN = `
 <tr class="in-stock-row" data-id="48" onclick="handleTableRowClick(this)">
@@ -67,6 +72,19 @@ USD
 / Annually
 `;
 
+describe('rewriteDmitAffUrl', () => {
+	it('replaces affiliate id on Dmit purchase links', () => {
+		expect(
+			rewriteDmitAffUrl('https://www.dmit.io/aff.php?aff=1098&pid=201', '23808'),
+		).toBe('https://www.dmit.io/aff.php?aff=23808&pid=201');
+	});
+
+	it('uses env override when provided', () => {
+		expect(resolveDmitAffId({ DMIT_AFF_ID: '99999' })).toBe('99999');
+		expect(resolveDmitAffId({} as Env)).toBe('23808');
+	});
+});
+
 describe('parseQixiDmitStockPage', () => {
 	it('parses in-stock and out-of-stock table rows', () => {
 		const items = parseQixiDmitStockPage(SAMPLE_QIXI_ROW_IN + SAMPLE_QIXI_ROW_OUT);
@@ -75,7 +93,7 @@ describe('parseQixiDmitStockPage', () => {
 			{
 				externalId: 'HKG.AS3.T1.TINY',
 				title: 'HKG.AS3.T1.TINY',
-				url: 'https://www.dmit.io/aff.php?aff=1098&pid=201',
+				url: 'https://www.dmit.io/aff.php?aff=23808&pid=201',
 				summary: '$39.9/月',
 				state: {
 					available: true,
@@ -86,7 +104,7 @@ describe('parseQixiDmitStockPage', () => {
 			{
 				externalId: 'LAX.AN5.Pro.TINY',
 				title: 'LAX.AN5.Pro.TINY',
-				url: 'https://www.dmit.io/aff.php?aff=1098&pid=100',
+				url: 'https://www.dmit.io/aff.php?aff=23808&pid=100',
 				summary: '缺货',
 				state: {
 					available: false,

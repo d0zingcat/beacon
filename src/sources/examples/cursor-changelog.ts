@@ -70,6 +70,6 @@ createSource(
 			'user-agent': 'beacon/1.0 (+https://github.com/d0zingcat/beacon)',
 			accept: 'text/html',
 		},
-		parse: parseCursorChangelogHtml,
+		parse: (html, _ctx) => parseCursorChangelogHtml(html),
 	}),
 );

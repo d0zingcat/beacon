@@ -8,7 +8,35 @@ export const OUT_OF_STOCK_TEXT = 'Out of Stock';
 const PRODUCT_NAME_RE = /^(?:LAX|HKG|TYO)\.[A-Za-z0-9.]+$/;
 const TABLE_ROW_RE = /<tr class="(in-stock-row|out-stock-row)"[\s\S]*?<\/tr>/g;
 
-export function parseQixiDmitStockPage(html: string): RawItem[] {
+/** Default DMIT affiliate ID for purchase links rewritten from third-party aggregators. */
+export const DEFAULT_DMIT_AFF_ID = '23808';
+
+export function resolveDmitAffId(env?: Pick<Env, 'DMIT_AFF_ID'>): string {
+	const configured = env?.DMIT_AFF_ID?.trim();
+	return configured || DEFAULT_DMIT_AFF_ID;
+}
+
+/** Replace affiliate ID on Dmit purchase URLs while preserving pid and other params. */
+export function rewriteDmitAffUrl(url: string, affId: string = DEFAULT_DMIT_AFF_ID): string {
+	try {
+		const parsed = new URL(url);
+		if (!parsed.hostname.endsWith('dmit.io')) {
+			return url;
+		}
+		if (parsed.pathname.includes('aff.php') || parsed.searchParams.has('pid')) {
+			parsed.searchParams.set('aff', affId);
+			return parsed.toString();
+		}
+	} catch {
+		return url;
+	}
+	return url;
+}
+
+export function parseQixiDmitStockPage(
+	html: string,
+	affId: string = DEFAULT_DMIT_AFF_ID,
+): RawItem[] {
 	const items: RawItem[] = [];
 
 	for (const rowMatch of html.matchAll(TABLE_ROW_RE)) {
@@ -29,12 +57,15 @@ export function parseQixiDmitStockPage(html: string): RawItem[] {
 		);
 		const price = priceMatch?.[1]?.trim();
 		const urlMatch = row.match(/href="(https:\/\/www\.dmit\.io\/[^"]+)"/);
-		const url = urlMatch?.[1]?.replace(/&amp;/g, '&');
+		const url = rewriteDmitAffUrl(
+			urlMatch?.[1]?.replace(/&amp;/g, '&') ?? QIXI_DMIT_STOCK_URL,
+			affId,
+		);
 
 		items.push({
 			externalId: title,
 			title,
-			url: url ?? QIXI_DMIT_STOCK_URL,
+			url,
 			summary: available ? (price ?? '有货') : '缺货',
 			state: {
 				available,
@@ -118,8 +149,9 @@ createSource(
 			'user-agent': 'beacon/1.0 (+https://github.com/d0zingcat/beacon)',
 			accept: 'text/html,application/xhtml+xml',
 		},
-		parse(html) {
-			const items = parseQixiDmitStockPage(html);
+		parse(html, ctx) {
+			const affId = resolveDmitAffId(ctx.env);
+			const items = parseQixiDmitStockPage(html, affId);
 			if (items.length === 0) {
 				throw new Error('No DMIT products parsed from stock.qixi.me');
 			}

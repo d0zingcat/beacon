@@ -218,12 +218,20 @@ export async function runSource(
 					stateChanges += 1;
 				}
 				if (result.changed || forceNotify) {
+					const isDmitStock = source.id === 'dmit-stock';
+					const diff =
+						result.diff && Object.keys(result.diff).length > 0
+							? result.diff
+							: forceNotify && isDmitStock
+								? { snapshot: raw.state }
+								: undefined;
 					notifyEvents.push(
 						toStateChangeEvent(source, {
 							itemId: result.itemId,
 							title: raw.title,
 							url: raw.url,
-							diff: result.diff ?? (forceNotify ? { snapshot: raw.state } : undefined),
+							summary: isDmitStock ? raw.summary : undefined,
+							diff,
 						}),
 					);
 				}
