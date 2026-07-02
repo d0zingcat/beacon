@@ -1,4 +1,4 @@
-import type { BrowserWorker, Page } from '@cloudflare/playwright';
+import type { BrowserWorker, Page } from '@cloudflare/puppeteer';
 
 export type SourceKind = 'feed' | 'webpage' | 'browser';
 export type SourceMode = 'append' | 'state';

@@ -61,6 +61,6 @@ createSource(
 			'user-agent': 'beacon/1.0 (+https://github.com/d0zingcat/beacon)',
 			accept: 'text/markdown, text/plain, */*',
 		},
-		parse: parseBedrockModelsMarkdown,
+		parse: (md, _ctx) => parseBedrockModelsMarkdown(md),
 	}),
 );

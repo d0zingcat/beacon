@@ -1,5 +1,40 @@
 import { describe, expect, it } from 'vitest';
+import { formatDmitStateDiff } from './format-dmit';
 import { formatNotification } from './format';
+
+describe('formatDmitStateDiff', () => {
+	it('formats available change with price from summary', () => {
+		expect(
+			formatDmitStateDiff({ available: { from: false, to: true } }, '$39.9/月'),
+		).toEqual(['库存: 缺货 → 有货', '价格: $39.9/月']);
+	});
+
+	it('formats available change to out of stock without price', () => {
+		expect(formatDmitStateDiff({ available: { from: true, to: false } }, '缺货')).toEqual([
+			'库存: 有货 → 缺货',
+		]);
+	});
+
+	it('formats price change', () => {
+		expect(
+			formatDmitStateDiff({
+				price: { from: '$39.9/月', to: '$49.9/月' },
+			}),
+		).toEqual(['价格: $39.9/月 → $49.9/月']);
+	});
+
+	it('formats snapshot state', () => {
+		expect(
+			formatDmitStateDiff({
+				snapshot: {
+					available: true,
+					price: '$39.9/月',
+					source: 'stock.qixi.me',
+				},
+			}),
+		).toEqual(['库存: 有货', '价格: $39.9/月']);
+	});
+});
 
 describe('formatNotification', () => {
 	it('formats append event', () => {
@@ -23,18 +58,49 @@ describe('formatNotification', () => {
 		);
 	});
 
-	it('formats state_change event', () => {
+	it('formats dmit stock state_change event', () => {
 		expect(
 			formatNotification({
 				kind: 'state_change',
 				sourceId: 'dmit-stock',
 				sourceName: 'DMIT VPS Stock',
 				itemId: 2,
-				title: 'Plan A',
-				url: 'https://example.com/vps',
+				title: 'HKG.AS3.T1.TINY',
+				url: 'https://www.dmit.io/aff.php?aff=23808&pid=201',
+				summary: '$39.9/月',
 				diff: { available: { from: false, to: true } },
 			}),
-		).toContain('[beacon] 状态变化 · DMIT VPS Stock');
+		).toBe(
+			[
+				'[beacon] 状态变化 · DMIT VPS Stock',
+				'HKG.AS3.T1.TINY',
+				'库存: 缺货 → 有货',
+				'价格: $39.9/月',
+				'https://www.dmit.io/aff.php?aff=23808&pid=201',
+			].join('\n'),
+		);
+	});
+
+	it('keeps generic JSON diff for non-dmit state_change events', () => {
+		expect(
+			formatNotification({
+				kind: 'state_change',
+				sourceId: 'other-source',
+				sourceName: 'Other Source',
+				itemId: 3,
+				title: 'Item A',
+				url: 'https://example.com/item',
+				summary: 'ignored for generic formatter',
+				diff: { status: { from: 'old', to: 'new' } },
+			}),
+		).toBe(
+			[
+				'[beacon] 状态变化 · Other Source',
+				'Item A',
+				'{\n  "status": {\n    "from": "old",\n    "to": "new"\n  }\n}',
+				'https://example.com/item',
+			].join('\n'),
+		);
 	});
 
 	it('formats crawl_error event', () => {

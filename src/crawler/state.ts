@@ -113,6 +113,7 @@ export function toStateChangeEvent(
 		itemId: number;
 		title: string;
 		url?: string;
+		summary?: string;
 		diff?: Record<string, unknown>;
 	},
 ): NotificationEvent {
@@ -123,6 +124,7 @@ export function toStateChangeEvent(
 		itemId: input.itemId,
 		title: input.title,
 		url: input.url,
+		summary: input.summary,
 		diff: input.diff,
 	};
 }

@@ -18,7 +18,7 @@ Two source modes:
 - Cloudflare Workers + TypeScript
 - D1 (SQLite)
 - Queues (decoupled crawl jobs)
-- Browser Rendering (`@cloudflare/playwright`)
+- Browser Rendering (`@cloudflare/puppeteer`)
 - Cron Triggers
 - Hono (HTTP API)
 - Telegram / Feishu (notifications)
@@ -147,7 +147,7 @@ Response includes `itemsNotified` (count of messages sent this run).
 | `cursor-changelog` | append | HTML (cursor.com/changelog) | Live |
 | `kiro-changelog` | append | RSS (kiro.dev/changelog) | Live |
 | `bedrock-models` | append | Markdown (AWS Bedrock model list) | Live |
-| `dmit-stock` | state | Browser Rendering (DMIT cart stock) | Active |
+| `dmit-stock` | state | Webpage (stock.qixi.me aggregator) | Active |
 
 Sources live under `src/sources/examples/`, loaded from `src/sources/examples/index.ts`.
 

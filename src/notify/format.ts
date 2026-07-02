@@ -1,4 +1,7 @@
+import { formatDmitStateChangeEvent } from './format-dmit';
 import type { NotificationEvent } from './types';
+
+const DMIT_STOCK_SOURCE_ID = 'dmit-stock';
 
 function formatAppendEvent(event: Extract<NotificationEvent, { kind: 'append' }>): string {
 	const lines = [`[beacon] 新条目 · ${event.sourceName}`, event.title];
@@ -10,6 +13,10 @@ function formatAppendEvent(event: Extract<NotificationEvent, { kind: 'append' }>
 function formatStateChangeEvent(
 	event: Extract<NotificationEvent, { kind: 'state_change' }>,
 ): string {
+	if (event.sourceId === DMIT_STOCK_SOURCE_ID) {
+		return formatDmitStateChangeEvent(event);
+	}
+
 	const lines = [`[beacon] 状态变化 · ${event.sourceName}`, event.title];
 	if (event.diff) {
 		lines.push(JSON.stringify(event.diff, null, 2));

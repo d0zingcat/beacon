@@ -1,4 +1,4 @@
 # Copy to .dev.vars for local dev (not committed).
 # FEISHU_WEBHOOK_URL=https://open.feishu.cn/open-apis/bot/v2/hook/...
 # TELEGRAM_BOT_TOKEN=
-# TELEGRAM_CHAT_ID=
+# DMIT_AFF_ID=23808
