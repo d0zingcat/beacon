@@ -30,14 +30,12 @@ describe('feed-config', () => {
 				id: 'openai-blog',
 				name: 'OpenAI Blog',
 				mode: 'append',
-				schedule: '0 * * * *',
 				config: { feedUrl: 'https://openai.com/news/rss.xml' },
 			}),
 		).toEqual({
 			id: 'openai-blog',
 			name: 'OpenAI Blog',
 			mode: 'append',
-			schedule: '0 * * * *',
 			config: { feedUrl: 'https://openai.com/news/rss.xml' },
 		});
 	});

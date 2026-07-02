@@ -7,7 +7,6 @@ export function buildSource(
 		id: string;
 		name: string;
 		mode: SourceMode;
-		schedule: string;
 		normalize?: (raw: RawItem) => Omit<RawItem, 'raw'>;
 		diff?: Source['diff'];
 	},
@@ -27,7 +26,6 @@ export function createSource(
 		id: string;
 		name: string;
 		mode: SourceMode;
-		schedule: string;
 		normalize?: (raw: RawItem) => Omit<RawItem, 'raw'>;
 		diff?: Source['diff'];
 	},

@@ -25,7 +25,6 @@ export interface Source {
 	name: string;
 	kind: SourceKind;
 	mode: SourceMode;
-	schedule: string;
 	fetch(ctx: SourceContext): Promise<RawItem[]>;
 	normalize?(raw: RawItem): Omit<RawItem, 'raw'>;
 	diff?(prev: Record<string, unknown>, next: Record<string, unknown>): boolean;

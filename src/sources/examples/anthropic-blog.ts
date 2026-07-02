@@ -155,7 +155,6 @@ createSource(
 		id: 'anthropic-blog',
 		name: 'Anthropic Blog',
 		mode: 'append',
-		schedule: '0 * * * *',
 	},
 	createWebpageExtractor({
 		url: NEWS_URL,

@@ -15,7 +15,6 @@ const OPENAI_ROW = {
 	name: 'OpenAI Blog',
 	kind: 'feed' as const,
 	mode: 'append' as const,
-	schedule: '0 * * * *',
 	config_json: '{"feedUrl":"https://openai.com/news/rss.xml"}',
 	last_run_at: null,
 	last_status: null,
@@ -35,7 +34,6 @@ describe('load-from-db', () => {
 			name: 'OpenAI Blog',
 			kind: 'feed',
 			mode: 'append',
-			schedule: '0 * * * *',
 		});
 	});
 
@@ -79,7 +77,6 @@ describe('load-from-db', () => {
 			name: 'Stale',
 			kind: 'feed',
 			mode: 'append',
-			schedule: '0 * * * *',
 			fetch: vi.fn(),
 		});
 		vi.mocked(listFeedSourceRows).mockResolvedValue([OPENAI_ROW]);

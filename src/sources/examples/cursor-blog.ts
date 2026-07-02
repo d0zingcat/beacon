@@ -131,7 +131,6 @@ createSource(
 		id: 'cursor-blog',
 		name: 'Cursor Blog',
 		mode: 'append',
-		schedule: '0 * * * *',
 	},
 	createWebpageExtractor({
 		url: BLOG_URL,
