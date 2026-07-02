@@ -12,9 +12,11 @@ export type FeedErrorBody = {
 	allowed?: string[];
 };
 
+export type FeedErrorStatus = 400 | 404;
+
 export type FeedHandlerResult =
 	| { ok: true; xml: string }
-	| { ok: false; status: number; body: FeedErrorBody };
+	| { ok: false; status: FeedErrorStatus; body: FeedErrorBody };
 
 export async function handleFeedRequest(input: {
 	reqUrl: string;
