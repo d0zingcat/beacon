@@ -1,0 +1,21 @@
+---
+description: Write documentation and commit messages in English
+alwaysApply: true
+---
+
+# English for docs and commits
+
+- Write repository documentation, PR text, and commit messages in **English**.
+- Use imperative mood for commit subjects: `Add …`, `Fix …`, `Update …`.
+- Keep comments in source code in English unless explaining locale-specific behavior.
+- Notification or UI strings may use the target audience language (e.g. Chinese for Telegram).
+
+Examples:
+
+```
+# Good
+Add squash merge workflow to AGENTS.md
+
+# Bad
+为 AGENTS.md 添加 squash merge 工作流
+```
