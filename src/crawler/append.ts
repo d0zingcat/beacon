@@ -33,6 +33,7 @@ function toAppendEvent(
 		title: normalized.title,
 		url: normalized.url,
 		summary: normalized.summary,
+		publishedAt: normalized.publishedAt ? Date.parse(normalized.publishedAt) : undefined,
 	};
 }
 

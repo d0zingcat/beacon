@@ -124,6 +124,7 @@ export async function runSource(
 							title: raw.title,
 							url: raw.url,
 							summary: isDmitStock ? raw.summary : undefined,
+							publishedAt: raw.publishedAt ? Date.parse(raw.publishedAt) : undefined,
 							diff,
 						}),
 					);

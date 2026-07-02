@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { formatNotification } from './format';
 import { telegramTransport } from './telegram';
 
 function env(): Env {
@@ -24,7 +25,14 @@ describe('telegramTransport', () => {
 		const fetch = vi.fn().mockResolvedValue(new Response('{}', { status: 200 }));
 		vi.stubGlobal('fetch', fetch);
 
-		await telegramTransport.send(env(), 'hello beacon');
+		const event = {
+			kind: 'append' as const,
+			sourceId: 'test',
+			sourceName: 'Test',
+			itemId: 1,
+			title: 'hello beacon',
+		};
+		await telegramTransport.send(env(), event);
 
 		expect(fetch).toHaveBeenCalledWith(
 			'https://api.telegram.org/botbot-token/sendMessage',
@@ -33,7 +41,7 @@ describe('telegramTransport', () => {
 				headers: { 'content-type': 'application/json' },
 				body: JSON.stringify({
 					chat_id: 'chat-id',
-					text: 'hello beacon',
+					text: formatNotification(event),
 					disable_web_page_preview: true,
 				}),
 			},
@@ -46,8 +54,13 @@ describe('telegramTransport', () => {
 			.mockResolvedValue(new Response('bad request', { status: 400 }));
 		vi.stubGlobal('fetch', fetch);
 
-		await expect(telegramTransport.send(env(), 'hello')).rejects.toThrow(
-			'Telegram send failed: 400 bad request',
-		);
+		await expect(
+			telegramTransport.send(env(), {
+				kind: 'crawl_error',
+				sourceId: 'test',
+				sourceName: 'Test',
+				error: 'hello',
+			}),
+		).rejects.toThrow('Telegram send failed: 400 bad request');
 	});
 });

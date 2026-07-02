@@ -114,6 +114,7 @@ export function toStateChangeEvent(
 		title: string;
 		url?: string;
 		summary?: string;
+		publishedAt?: number;
 		diff?: Record<string, unknown>;
 	},
 ): NotificationEvent {
@@ -125,6 +126,7 @@ export function toStateChangeEvent(
 		title: input.title,
 		url: input.url,
 		summary: input.summary,
+		publishedAt: input.publishedAt,
 		diff: input.diff,
 	};
 }

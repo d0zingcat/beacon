@@ -1,10 +1,13 @@
+import { formatNotification } from './format';
 import type { NotifierTransport } from './transport';
+import type { NotificationEvent } from './types';
 
 function isConfigured(env: Env): boolean {
 	return Boolean(env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID);
 }
 
-async function send(env: Env, text: string): Promise<void> {
+async function send(env: Env, event: NotificationEvent): Promise<void> {
+	const text = formatNotification(event);
 	const response = await fetch(
 		`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`,
 		{

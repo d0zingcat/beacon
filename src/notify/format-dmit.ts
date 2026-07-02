@@ -1,3 +1,5 @@
+import { formatTitleWithPublishedAt } from './format-time';
+
 const DIFF_FIELD_LABELS: Record<string, string> = {
 	available: '📦 库存',
 	price: '💰 价格',
@@ -88,9 +90,13 @@ export function formatDmitStateChangeEvent(input: {
 	title: string;
 	url?: string;
 	summary?: string;
+	publishedAt?: number;
 	diff?: Record<string, unknown>;
 }): string {
-	const lines = [`🔔 [beacon] 状态变化 · ${input.sourceName}`, input.title];
+	const lines = [
+		`🔔 状态变化 · ${input.sourceName}`,
+		formatTitleWithPublishedAt(input.title, input.publishedAt),
+	];
 	if (input.diff && Object.keys(input.diff).length > 0) {
 		const diffLines = formatDmitStateDiff(input.diff, input.summary);
 		if (diffLines.length > 0) {

@@ -7,6 +7,7 @@ export type NotificationEvent =
 			title: string;
 			url?: string;
 			summary?: string;
+			publishedAt?: number;
 	  }
 	| {
 			kind: 'state_change';
@@ -16,6 +17,7 @@ export type NotificationEvent =
 			title: string;
 			url?: string;
 			summary?: string;
+			publishedAt?: number;
 			diff?: Record<string, unknown>;
 	  }
 	| {

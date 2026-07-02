@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { formatDmitStateDiff } from './format-dmit';
 import { formatNotification } from './format';
 
+const publishedAt = Date.parse('2026-07-01T01:30:00.000Z');
+
 describe('formatDmitStateDiff', () => {
 	it('formats available change with price from summary', () => {
 		expect(
@@ -37,6 +39,28 @@ describe('formatDmitStateDiff', () => {
 });
 
 describe('formatNotification', () => {
+	it('formats append event with published time beside title', () => {
+		expect(
+			formatNotification({
+				kind: 'append',
+				sourceId: 'kiro-changelog',
+				sourceName: 'Kiro Changelog',
+				itemId: 1,
+				title: 'New feature',
+				url: 'https://example.com/post',
+				summary: 'A short summary',
+				publishedAt,
+			}),
+		).toBe(
+			[
+				'📰 新条目 · Kiro Changelog',
+				'New feature · 2026/7/1 09:30',
+				'A short summary',
+				'🔗 https://example.com/post',
+			].join('\n'),
+		);
+	});
+
 	it('formats append event', () => {
 		expect(
 			formatNotification({
@@ -50,7 +74,7 @@ describe('formatNotification', () => {
 			}),
 		).toBe(
 			[
-				'📰 [beacon] 新条目 · Kiro Changelog',
+				'📰 新条目 · Kiro Changelog',
 				'New feature',
 				'A short summary',
 				'🔗 https://example.com/post',
@@ -72,7 +96,7 @@ describe('formatNotification', () => {
 			}),
 		).toBe(
 			[
-				'🔔 [beacon] 状态变化 · DMIT VPS Stock',
+				'🔔 状态变化 · DMIT VPS Stock',
 				'HKG.AS3.T1.TINY',
 				'📦 库存: ❌ 缺货 → ✅ 有货',
 				'💰 价格: $39.9/月',
@@ -95,7 +119,7 @@ describe('formatNotification', () => {
 			}),
 		).toBe(
 			[
-				'🔔 [beacon] 状态变化 · Other Source',
+				'🔔 状态变化 · Other Source',
 				'Item A',
 				'{\n  "status": {\n    "from": "old",\n    "to": "new"\n  }\n}',
 				'🔗 https://example.com/item',
@@ -113,7 +137,7 @@ describe('formatNotification', () => {
 			}),
 		).toBe(
 			[
-				'⚠️ [beacon] 抓取失败 · Kiro Changelog',
+				'⚠️ 抓取失败 · Kiro Changelog',
 				'📌 source: kiro-changelog',
 				'❌ RSS fetch failed: 403 Forbidden',
 			].join('\n'),
