@@ -1,9 +1,17 @@
+import { reserveNotifySlot } from '../db/notify-rate-limit';
 import { formatDmitStateDiff } from './format-dmit';
 import { formatPublishedAt } from './format-time';
 import type { NotifierTransport } from './transport';
+import { createSerialRateLimiter, sleep } from './rate-limiter';
 import type { NotificationEvent } from './types';
 
+/** Feishu custom bot: 100/min and 5/sec per tenant per bot. */
+const FEISHU_MIN_INTERVAL_MS = 600;
+const FEISHU_MAX_RETRIES = 3;
+const FEISHU_RETRY_BASE_MS = 1_000;
 const DMIT_STOCK_SOURCE_ID = 'dmit-stock';
+
+const feishuSendLimiter = createSerialRateLimiter();
 
 type FeishuPostElement =
 	| { tag: 'text'; text: string }
@@ -102,20 +110,53 @@ export function buildFeishuNotificationPayload(event: NotificationEvent): string
 	}
 }
 
-async function send(env: Env, event: NotificationEvent): Promise<void> {
+export function isFeishuRateLimitError(code: number | undefined, msg?: string): boolean {
+	return code === 11232 || (msg?.includes('frequency limited') ?? false);
+}
+
+function isRateLimitFailure(error: unknown): boolean {
+	if (!(error instanceof Error)) {
+		return false;
+	}
+	return error.message.includes('11232') || error.message.includes('frequency limited');
+}
+
+async function sendOnce(env: Env, body: string): Promise<void> {
 	const response = await fetch(env.FEISHU_WEBHOOK_URL, {
 		method: 'POST',
 		headers: { 'content-type': 'application/json' },
-		body: buildFeishuNotificationPayload(event),
+		body,
 	});
 	if (!response.ok) {
-		const body = await response.text();
-		throw new Error(`Feishu send failed: ${response.status} ${body}`);
+		const responseBody = await response.text();
+		throw new Error(`Feishu send failed: ${response.status} ${responseBody}`);
 	}
 	const result = (await response.json()) as { code?: number; msg?: string };
 	if (result.code !== undefined && result.code !== 0) {
 		throw new Error(`Feishu send failed: ${result.code} ${result.msg ?? ''}`);
 	}
+}
+
+async function sendWithRetry(env: Env, body: string): Promise<void> {
+	for (let attempt = 0; attempt <= FEISHU_MAX_RETRIES; attempt++) {
+		try {
+			await sendOnce(env, body);
+			return;
+		} catch (error) {
+			if (!isRateLimitFailure(error) || attempt === FEISHU_MAX_RETRIES) {
+				throw error;
+			}
+			const delayMs = FEISHU_RETRY_BASE_MS * 2 ** attempt;
+			await sleep(delayMs);
+		}
+	}
+}
+
+async function send(env: Env, event: NotificationEvent): Promise<void> {
+	return feishuSendLimiter.schedule(async () => {
+		await reserveNotifySlot(env.DB, 'feishu', FEISHU_MIN_INTERVAL_MS);
+		await sendWithRetry(env, buildFeishuNotificationPayload(event));
+	});
 }
 
 export const feishuTransport: NotifierTransport = {
