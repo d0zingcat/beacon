@@ -1,7 +1,7 @@
 const DIFF_FIELD_LABELS: Record<string, string> = {
-	available: '库存',
-	price: '价格',
-	billingCycle: '计费周期',
+	available: '📦 库存',
+	price: '💰 价格',
+	billingCycle: '📅 计费周期',
 };
 
 const STOCK_STATUS_TEXT = new Set(['缺货', '有货', 'Out of Stock']);
@@ -19,8 +19,8 @@ function isDiffChange(value: unknown): value is DiffChange {
 
 function formatDiffValue(key: string, value: unknown): string {
 	if (key === 'available') {
-		if (value === true) return '有货';
-		if (value === false) return '缺货';
+		if (value === true) return '✅ 有货';
+		if (value === false) return '❌ 缺货';
 	}
 	if (value === null || value === undefined) return '—';
 	return String(value);
@@ -76,8 +76,8 @@ export function formatDmitStateDiff(
 	}
 
 	const price = resolveDisplayPrice(diff, summary);
-	if (price && !lines.some((line) => line.startsWith('价格:'))) {
-		lines.push(`价格: ${price}`);
+	if (price && !lines.some((line) => line.startsWith('💰 价格:'))) {
+		lines.push(`${DIFF_FIELD_LABELS.price}: ${price}`);
 	}
 
 	return lines;
@@ -90,7 +90,7 @@ export function formatDmitStateChangeEvent(input: {
 	summary?: string;
 	diff?: Record<string, unknown>;
 }): string {
-	const lines = [`[beacon] 状态变化 · ${input.sourceName}`, input.title];
+	const lines = [`🔔 [beacon] 状态变化 · ${input.sourceName}`, input.title];
 	if (input.diff && Object.keys(input.diff).length > 0) {
 		const diffLines = formatDmitStateDiff(input.diff, input.summary);
 		if (diffLines.length > 0) {
@@ -101,6 +101,6 @@ export function formatDmitStateChangeEvent(input: {
 	} else if (input.summary) {
 		lines.push(input.summary);
 	}
-	if (input.url) lines.push(input.url);
+	if (input.url) lines.push(`🔗 ${input.url}`);
 	return lines.join('\n');
 }
