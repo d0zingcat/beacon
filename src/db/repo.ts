@@ -322,6 +322,7 @@ export async function listItems(
 	db: Db,
 	input: {
 		sourceId?: string;
+		sourceIds?: string[];
 		mode?: SourceMode;
 		limit: number;
 		cursor?: number;
@@ -336,7 +337,11 @@ export async function listItems(
 	const params: unknown[] = [];
 	const clauses: string[] = [];
 
-	if (input.sourceId) {
+	if (input.sourceIds?.length) {
+		const placeholders = input.sourceIds.map(() => '?').join(', ');
+		clauses.push(`i.source_id IN (${placeholders})`);
+		params.push(...input.sourceIds);
+	} else if (input.sourceId) {
 		clauses.push('i.source_id = ?');
 		params.push(input.sourceId);
 	}

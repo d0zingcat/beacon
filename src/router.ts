@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { DEFAULT_PAGE_LIMIT, MAX_PAGE_LIMIT } from './config';
-import { listSources } from './sources/registry';
+import { FEED_CACHE_CONTROL, FEED_CONTENT_TYPE, handleFeedRequest } from './feed/handler';
+import { getSource, listSources } from './sources/registry';
 import { createDb } from './db/client';
 import {
 	getItemById,
@@ -27,6 +28,32 @@ app.get('/sources', (c) => {
 		schedule: source.schedule,
 	}));
 	return c.json({ sources });
+});
+
+app.get('/feed', async (c) => {
+	const db = createDb(c.env);
+	const limit = Math.min(
+		Number(c.req.query('limit') ?? DEFAULT_PAGE_LIMIT),
+		MAX_PAGE_LIMIT,
+	);
+	const result = await handleFeedRequest({
+		reqUrl: c.req.url,
+		sourceParam: c.req.query('source'),
+		limit,
+		sort: parseItemSortField(c.req.query('sort')),
+		order: parseSortOrder(c.req.query('order')),
+		getSource,
+		listItems: (query) => listItems(db, query),
+	});
+
+	if (!result.ok) {
+		return c.json(result.body, result.status);
+	}
+
+	return c.body(result.xml, 200, {
+		'Content-Type': FEED_CONTENT_TYPE,
+		'Cache-Control': FEED_CACHE_CONTROL,
+	});
 });
 
 app.get('/items', async (c) => {
