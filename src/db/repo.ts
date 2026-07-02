@@ -6,6 +6,7 @@ export interface SourceRow extends Record<string, unknown> {
 	name: string;
 	kind: SourceKind;
 	mode: SourceMode;
+	schedule: string | null;
 	config_json: string | null;
 	last_run_at: number | null;
 	last_status: string | null;
@@ -74,25 +75,100 @@ export async function upsertSource(
 		name: string;
 		kind: SourceKind;
 		mode: SourceMode;
+		schedule?: string;
 		configJson?: string;
 		now: number;
 	},
 ): Promise<void> {
 	await db.run(
-		`INSERT INTO sources (id, name, kind, mode, config_json, created_at)
-     VALUES (?, ?, ?, ?, ?, ?)
+		`INSERT INTO sources (id, name, kind, mode, schedule, config_json, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(id) DO UPDATE SET
        name = excluded.name,
        kind = excluded.kind,
        mode = excluded.mode,
-       config_json = excluded.config_json`,
+       schedule = COALESCE(excluded.schedule, sources.schedule),
+       config_json = COALESCE(excluded.config_json, sources.config_json)`,
 		input.id,
 		input.name,
 		input.kind,
 		input.mode,
+		input.schedule ?? null,
 		input.configJson ?? null,
 		input.now,
 	);
+}
+
+export async function listFeedSourceRows(db: Db): Promise<SourceRow[]> {
+	return db.all<SourceRow>(
+		`SELECT * FROM sources WHERE kind = 'feed' ORDER BY id ASC`,
+	);
+}
+
+export async function getSourceRow(db: Db, sourceId: string): Promise<SourceRow | null> {
+	return db.first<SourceRow>(`SELECT * FROM sources WHERE id = ? LIMIT 1`, sourceId);
+}
+
+export async function insertFeedSource(
+	db: Db,
+	input: {
+		id: string;
+		name: string;
+		mode: SourceMode;
+		schedule: string;
+		configJson: string;
+		now: number;
+	},
+): Promise<void> {
+	await db.run(
+		`INSERT INTO sources (id, name, kind, mode, schedule, config_json, created_at)
+     VALUES (?, ?, 'feed', ?, ?, ?, ?)`,
+		input.id,
+		input.name,
+		input.mode,
+		input.schedule,
+		input.configJson,
+		input.now,
+	);
+}
+
+export async function updateFeedSource(
+	db: Db,
+	input: {
+		id: string;
+		name?: string;
+		schedule?: string;
+		configJson?: string;
+	},
+): Promise<boolean> {
+	const clauses: string[] = [];
+	const params: unknown[] = [];
+	if (input.name !== undefined) {
+		clauses.push('name = ?');
+		params.push(input.name);
+	}
+	if (input.schedule !== undefined) {
+		clauses.push('schedule = ?');
+		params.push(input.schedule);
+	}
+	if (input.configJson !== undefined) {
+		clauses.push('config_json = ?');
+		params.push(input.configJson);
+	}
+	if (clauses.length === 0) {
+		return false;
+	}
+	params.push(input.id);
+	const result = await db.run(
+		`UPDATE sources SET ${clauses.join(', ')} WHERE id = ? AND kind = 'feed'`,
+		...params,
+	);
+	return (result.meta.changes ?? 0) > 0;
+}
+
+export async function deleteFeedSource(db: Db, sourceId: string): Promise<boolean> {
+	const result = await db.run(`DELETE FROM sources WHERE id = ? AND kind = 'feed'`, sourceId);
+	return (result.meta.changes ?? 0) > 0;
 }
 
 export async function updateSourceRunStatus(

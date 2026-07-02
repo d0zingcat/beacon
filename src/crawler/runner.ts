@@ -66,6 +66,7 @@ export async function runSource(
 		name: source.name,
 		kind: source.kind,
 		mode: source.mode,
+		schedule: source.schedule,
 		now,
 	});
 
