@@ -46,7 +46,7 @@ Queue Consumer → runSource(sourceId)
     hash 去重 → items           对比 state → states 快照
          └────────────┬────────────┘
                       ↓
-              Telegram 通知（可选）
+              Telegram / 飞书通知（可选；飞书经 D1 限流）
                       ↓
               Hono API 查询
 ```
@@ -98,8 +98,9 @@ beacon/
 | `items` | 实体条目；state 模式含 `state_json` / `prev_state_json` |
 | `states` | state 模式每次爬取的状态快照（保留历史） |
 | `run_log` | 每次爬取运行日志 |
+| `notify_rate_limit` | 通知通道全局限流（`channel` → `next_available_at`） |
 
-Migration 文件：`migrations/0001_init.sql`
+Migration 文件：`migrations/0001_init.sql`、`migrations/0002_notify_rate_limit.sql`
 
 ## 6. 已注册的占位源
 
@@ -199,7 +200,8 @@ createBrowserSource(
 3. 接入 `bedrock-models`（Browser / append）
 4. 接入 `vps-stock`（Browser / state）
 5. Scheduler 按 per-source cron 过滤
-6. API 鉴权、通知限流、Web 前端
+6. API 鉴权、Web 前端
+7. ~~通知限流（飞书）~~ — 已用 D1 全局 slot + 串行队列 + 11232 重试；Queue 异步方案见 [notify-queue-rate-limit-design.md](./docs/superpowers/specs/2026-07-02-notify-queue-rate-limit-design.md)
 
 ## 12. 关键设计决策
 
