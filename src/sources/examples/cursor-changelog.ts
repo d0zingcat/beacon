@@ -71,7 +71,6 @@ createSource(
 		id: 'cursor-changelog',
 		name: 'Cursor Changelog',
 		mode: 'append',
-		schedule: '0 * * * *',
 	},
 	createWebpageExtractor({
 		url: CHANGELOG_URL,

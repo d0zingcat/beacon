@@ -138,7 +138,6 @@ createSource(
 		id: 'dmit-stock',
 		name: 'DMIT VPS Stock',
 		mode: 'state',
-		schedule: '*/15 * * * *',
 		diff(prev, next) {
 			return prev.available !== next.available;
 		},

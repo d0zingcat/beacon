@@ -7,7 +7,6 @@ const APPEND_SOURCE: Source = {
 	name: 'Cursor Blog',
 	kind: 'webpage',
 	mode: 'append',
-	schedule: '0 * * * *',
 	fetch: async () => [],
 };
 
@@ -16,7 +15,6 @@ const STATE_SOURCE: Source = {
 	name: 'DMIT VPS Stock',
 	kind: 'webpage',
 	mode: 'state',
-	schedule: '*/5 * * * *',
 	fetch: async () => [],
 };
 
@@ -25,7 +23,6 @@ const CHANGELOG_SOURCE: Source = {
 	name: 'Cursor Changelog',
 	kind: 'webpage',
 	mode: 'append',
-	schedule: '0 * * * *',
 	fetch: async () => [],
 };
 

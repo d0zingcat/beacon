@@ -9,11 +9,11 @@ export default {
 	async fetch(request, env, ctx) {
 		return app.fetch(request, env, ctx);
 	},
-	async scheduled(_event, env, ctx) {
+	async scheduled(event, env, ctx) {
 		ctx.waitUntil(
 			(async () => {
 				await ensureSourcesLoaded(env);
-				await runScheduler(env);
+				await runScheduler(env, event.cron, event.scheduledTime);
 			})(),
 		);
 	},

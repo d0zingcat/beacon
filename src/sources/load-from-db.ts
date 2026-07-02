@@ -30,7 +30,6 @@ export function buildFeedSourceFromRow(row: SourceRow): Source | null {
 			id: row.id,
 			name: row.name,
 			mode: 'append',
-			schedule: row.schedule ?? '0 * * * *',
 		},
 		createFeedExtractorFromConfig(config),
 	);

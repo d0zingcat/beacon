@@ -6,7 +6,6 @@ export interface SourceRow extends Record<string, unknown> {
 	name: string;
 	kind: SourceKind;
 	mode: SourceMode;
-	schedule: string | null;
 	config_json: string | null;
 	last_run_at: number | null;
 	last_status: string | null;
@@ -75,25 +74,22 @@ export async function upsertSource(
 		name: string;
 		kind: SourceKind;
 		mode: SourceMode;
-		schedule?: string;
 		configJson?: string;
 		now: number;
 	},
 ): Promise<void> {
 	await db.run(
-		`INSERT INTO sources (id, name, kind, mode, schedule, config_json, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?)
+		`INSERT INTO sources (id, name, kind, mode, config_json, created_at)
+     VALUES (?, ?, ?, ?, ?, ?)
      ON CONFLICT(id) DO UPDATE SET
        name = excluded.name,
        kind = excluded.kind,
        mode = excluded.mode,
-       schedule = COALESCE(excluded.schedule, sources.schedule),
        config_json = COALESCE(excluded.config_json, sources.config_json)`,
 		input.id,
 		input.name,
 		input.kind,
 		input.mode,
-		input.schedule ?? null,
 		input.configJson ?? null,
 		input.now,
 	);
@@ -115,18 +111,16 @@ export async function insertFeedSource(
 		id: string;
 		name: string;
 		mode: SourceMode;
-		schedule: string;
 		configJson: string;
 		now: number;
 	},
 ): Promise<void> {
 	await db.run(
-		`INSERT INTO sources (id, name, kind, mode, schedule, config_json, created_at)
-     VALUES (?, ?, 'feed', ?, ?, ?, ?)`,
+		`INSERT INTO sources (id, name, kind, mode, config_json, created_at)
+     VALUES (?, ?, 'feed', ?, ?, ?)`,
 		input.id,
 		input.name,
 		input.mode,
-		input.schedule,
 		input.configJson,
 		input.now,
 	);
@@ -137,7 +131,6 @@ export async function updateFeedSource(
 	input: {
 		id: string;
 		name?: string;
-		schedule?: string;
 		configJson?: string;
 	},
 ): Promise<boolean> {
@@ -146,10 +139,6 @@ export async function updateFeedSource(
 	if (input.name !== undefined) {
 		clauses.push('name = ?');
 		params.push(input.name);
-	}
-	if (input.schedule !== undefined) {
-		clauses.push('schedule = ?');
-		params.push(input.schedule);
 	}
 	if (input.configJson !== undefined) {
 		clauses.push('config_json = ?');

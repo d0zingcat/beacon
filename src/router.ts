@@ -44,7 +44,6 @@ app.get('/sources', (c) => {
 		name: source.name,
 		kind: source.kind,
 		mode: source.mode,
-		schedule: source.schedule,
 		managedInDb: source.kind === 'feed' && !isStaticSource(source.id),
 	}));
 	return c.json({ sources });
@@ -67,7 +66,6 @@ app.post('/sources', async (c) => {
 			id: input.id,
 			name: input.name,
 			mode: input.mode,
-			schedule: input.schedule,
 			configJson: serializeFeedSourceConfig(input.config),
 			now,
 		});
@@ -94,7 +92,6 @@ app.patch('/sources/:id', async (c) => {
 	const update: {
 		id: string;
 		name?: string;
-		schedule?: string;
 		configJson?: string;
 	} = { id: sourceId };
 
@@ -104,12 +101,6 @@ app.patch('/sources/:id', async (c) => {
 		}
 		update.name = record.name.trim();
 	}
-	if (record.schedule !== undefined) {
-		if (typeof record.schedule !== 'string' || record.schedule.trim().length === 0) {
-			return c.json({ error: 'Invalid schedule' }, 400);
-		}
-		update.schedule = record.schedule.trim();
-	}
 	if (record.config !== undefined) {
 		const config = validateFeedSourceConfig(record.config);
 		if (!config) {
@@ -117,7 +108,7 @@ app.patch('/sources/:id', async (c) => {
 		}
 		update.configJson = serializeFeedSourceConfig(config);
 	}
-	if (update.name === undefined && update.schedule === undefined && update.configJson === undefined) {
+	if (update.name === undefined && update.configJson === undefined) {
 		return c.json({ error: 'No fields to update' }, 400);
 	}
 
@@ -162,7 +153,6 @@ app.get('/sources/:id', async (c) => {
 			name: source.name,
 			kind: source.kind,
 			mode: source.mode,
-			schedule: source.schedule,
 			managedInDb: source.kind === 'feed' && !isStaticSource(source.id),
 			config: row?.config_json ? JSON.parse(row.config_json) : null,
 			lastRunAt: row?.last_run_at ?? null,

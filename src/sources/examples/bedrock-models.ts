@@ -53,7 +53,6 @@ createSource(
 		id: 'bedrock-models',
 		name: 'AWS Bedrock Models',
 		mode: 'append',
-		schedule: '0 */6 * * *',
 	},
 	createWebpageExtractor({
 		url: MODEL_CARDS_URL,

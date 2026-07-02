@@ -22,7 +22,6 @@ const source: Source = {
 	name: 'Kiro Changelog',
 	kind: 'feed',
 	mode: 'append',
-	schedule: '0 * * * *',
 	fetch: vi.fn(),
 };
 

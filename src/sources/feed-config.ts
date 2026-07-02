@@ -13,7 +13,6 @@ export interface FeedSourceInput {
 	id: string;
 	name: string;
 	mode: 'append';
-	schedule: string;
 	config: FeedSourceConfig;
 }
 
@@ -71,9 +70,6 @@ export function validateFeedSourceInput(value: unknown): FeedSourceInput | null 
 	if (record.mode !== 'append') {
 		return null;
 	}
-	if (typeof record.schedule !== 'string' || record.schedule.trim().length === 0) {
-		return null;
-	}
 	const config = validateFeedSourceConfig(record.config);
 	if (!config) {
 		return null;
@@ -82,7 +78,6 @@ export function validateFeedSourceInput(value: unknown): FeedSourceInput | null 
 		id: record.id,
 		name: record.name.trim(),
 		mode: 'append',
-		schedule: record.schedule.trim(),
 		config,
 	};
 }
