@@ -11,7 +11,7 @@ const SAMPLE_HTML = `
   <div class="prose prose--block">
     <p>We&#x27;ve expanded team marketplaces to support Team MCPs and organization groups.</p>
   </div>
-  <time>Jun 30, 2026</time>
+  <time dateTime="2026-06-30T00:00:00.000Z">Jun 30, 2026</time>
 </article>
 `;
 
@@ -25,8 +25,16 @@ describe('parseCursorChangelogHtml', () => {
 				url: 'https://cursor.com/changelog/team-marketplace-updates',
 				title: 'MCPs and Organizations in Team Marketplaces',
 				summary: "We've expanded team marketplaces to support Team MCPs and organization groups.",
-				publishedAt: new Date('Jun 30, 2026').toISOString(),
+				publishedAt: new Date('2026-06-30T00:00:00.000Z').toISOString(),
 			},
 		]);
+	});
+
+	it('dedupes responsive duplicate articles on the same page', () => {
+		const duplicateHtml = SAMPLE_HTML + SAMPLE_HTML;
+		const items = parseCursorChangelogHtml(duplicateHtml);
+
+		expect(items).toHaveLength(1);
+		expect(items[0]?.externalId).toBe('team-marketplace-updates');
 	});
 });

@@ -6,6 +6,7 @@ const CHANGELOG_URL = 'https://cursor.com/changelog';
 
 export function parseCursorChangelogHtml(html: string): RawItem[] {
 	const items: RawItem[] = [];
+	const seen = new Set<string>();
 	const articles = html.match(/<article[\s\S]*?<\/article>/gi) ?? [];
 
 	for (const block of articles) {
@@ -16,12 +17,14 @@ export function parseCursorChangelogHtml(html: string): RawItem[] {
 
 		const path = linkMatch[1];
 		const slug = path.replace(/^\/changelog\//, '');
-		if (!slug || slug.startsWith('page/')) continue;
+		if (!slug || slug.startsWith('page/') || seen.has(slug)) continue;
+		seen.add(slug);
 
 		const titleMatch = block.match(/<h[12][^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/i);
 		const title = titleMatch ? stripHtml(titleMatch[1]).trim() : slug;
 		if (!title) continue;
 
+		const dateTimeMatch = block.match(/dateTime="([^"]+)"/i);
 		const dateMatch = block.match(
 			/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d{1,2}, \d{4}\b/,
 		);
@@ -29,12 +32,18 @@ export function parseCursorChangelogHtml(html: string): RawItem[] {
 			/<div class="prose[^"]*"[^>]*>[\s\S]*?<p>([\s\S]*?)<\/p>/i,
 		);
 
+		const publishedAt = dateTimeMatch
+			? new Date(dateTimeMatch[1]).toISOString()
+			: dateMatch
+				? new Date(dateMatch[0]).toISOString()
+				: undefined;
+
 		items.push({
 			externalId: slug,
 			url: `https://cursor.com${path}`,
 			title,
 			summary: summaryMatch ? stripHtml(summaryMatch[1]).trim() : undefined,
-			publishedAt: dateMatch ? new Date(dateMatch[0]).toISOString() : undefined,
+			publishedAt,
 		});
 	}
 
