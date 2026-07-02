@@ -79,6 +79,16 @@ curl http://localhost:8787/sources   # 列出已注册源
 
 GitHub Secrets **不会自动**进入 Worker 运行时环境。Deploy workflow 在每次部署后会执行 `wrangler secret put`，把上述通知类 Secret 同步到 Worker 的 `env`。请勿在 `wrangler.jsonc` 的 `vars` 里写通知变量——空字符串会在每次部署时覆盖 Worker secret。
 
+### API Token 权限
+
+建议从 **Edit Cloudflare Workers** 模板创建 Token，并额外勾选：
+
+- **D1** — Edit
+- **Queues** — Edit
+- **Workers Observability** — Edit（推荐）
+
+Token 作用域限定在当前账号即可。
+
 ## 手动部署
 
 适用于已有 Cloudflare 账号、希望自行管理资源的场景。
@@ -239,10 +249,13 @@ src/
 ├── extract/          # 抽取器（feed / webpage / browser）
 └── queue/            # Queue 消费
 migrations/           # D1 数据库迁移
+.github/workflows/    # CI + Deploy（Node 24）
+scripts/              # generate-deploy-config.mjs
 ```
 
 ## 相关文档
 
+- [README.md](./README.md) — 英文 readme
 - [HANDOFF.md](./HANDOFF.md) — 项目交接与详细设计说明（中文）
 - [Cloudflare Workers 文档](https://developers.cloudflare.com/workers/)
 - [Deploy to Cloudflare 按钮](https://developers.cloudflare.com/workers/platform/deploy-buttons/)
