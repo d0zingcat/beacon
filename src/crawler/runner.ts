@@ -1,18 +1,14 @@
-import type { RawItem } from '../sources/types';
 import type { NotificationEvent } from '../notify/types';
 import { getSource } from '../sources/registry';
 import { createDb } from '../db/client';
 import {
 	finishRunLog,
-	getItemByHash,
 	getSourceLastStatus,
-	hasItemByHash,
-	insertItem,
 	startRunLog,
 	updateSourceRunStatus,
 	upsertSource,
 } from '../db/repo';
-import { hashAppendItem } from './dedupe';
+import { processAppendItem } from './append';
 import { processStateItem, toStateChangeEvent } from './state';
 import { dispatchNotifications } from '../notify/dispatch';
 
@@ -30,105 +26,6 @@ export interface RunResult {
 	forceNotify: boolean;
 	status: 'ok' | 'error';
 	error?: string;
-}
-
-function normalizeItem(source: NonNullable<ReturnType<typeof getSource>>, raw: RawItem) {
-	return source.normalize ? source.normalize(raw) : raw;
-}
-
-function toAppendEvent(
-	source: NonNullable<ReturnType<typeof getSource>>,
-	itemId: number,
-	normalized: ReturnType<typeof normalizeItem>,
-): NotificationEvent {
-	return {
-		kind: 'append',
-		sourceId: source.id,
-		sourceName: source.name,
-		itemId,
-		title: normalized.title,
-		url: normalized.url,
-		summary: normalized.summary,
-	};
-}
-
-async function processAppendItem(
-	db: ReturnType<typeof createDb>,
-	source: NonNullable<ReturnType<typeof getSource>>,
-	raw: RawItem,
-	now: number,
-): Promise<NotificationEvent | null> {
-	const normalized = normalizeItem(source, raw);
-	const hash = await hashAppendItem({
-		sourceId: source.id,
-		externalId: normalized.externalId,
-		title: normalized.title,
-		url: normalized.url,
-		summary: normalized.summary,
-		content: normalized.content,
-	});
-
-	if (await hasItemByHash(db, source.id, hash)) {
-		return null;
-	}
-
-	const itemId = await insertItem(db, {
-		sourceId: source.id,
-		externalId: normalized.externalId,
-		title: normalized.title,
-		url: normalized.url,
-		summary: normalized.summary,
-		content: normalized.content,
-		publishedAt: normalized.publishedAt ? Date.parse(normalized.publishedAt) : undefined,
-		hash,
-		rawJson: raw.raw ? JSON.stringify(raw.raw) : undefined,
-		now,
-	});
-
-	return toAppendEvent(source, itemId, normalized);
-}
-
-async function processAppendItemForceNotify(
-	db: ReturnType<typeof createDb>,
-	source: NonNullable<ReturnType<typeof getSource>>,
-	raw: RawItem,
-	now: number,
-): Promise<{ event: NotificationEvent; inserted: boolean }> {
-	const normalized = normalizeItem(source, raw);
-	const hash = await hashAppendItem({
-		sourceId: source.id,
-		externalId: normalized.externalId,
-		title: normalized.title,
-		url: normalized.url,
-		summary: normalized.summary,
-		content: normalized.content,
-	});
-
-	const existing = await getItemByHash(db, source.id, hash);
-	if (existing) {
-		return {
-			event: toAppendEvent(source, existing.id, normalized),
-			inserted: false,
-		};
-	}
-
-	const itemId = await insertItem(db, {
-		sourceId: source.id,
-		externalId: normalized.externalId,
-		title: normalized.title,
-		url: normalized.url,
-		summary: normalized.summary,
-		content: normalized.content,
-		publishedAt: normalized.publishedAt ? Date.parse(normalized.publishedAt) : undefined,
-		hash,
-		rawJson: raw.raw ? JSON.stringify(raw.raw) : undefined,
-		now,
-	});
-
-	return {
-		event: toAppendEvent(source, itemId, normalized),
-		inserted: true,
-	};
 }
 
 export async function runSource(
@@ -187,18 +84,14 @@ export async function runSource(
 
 		if (source.mode === 'append') {
 			for (const raw of rawItems) {
-				if (forceNotify) {
-					const { event, inserted } = await processAppendItemForceNotify(db, source, raw, now);
-					if (inserted) {
-						itemsNew += 1;
-					}
+				const { event, inserted } = await processAppendItem(db, source, raw, now, {
+					forceNotify,
+				});
+				if (inserted) {
+					itemsNew += 1;
+				}
+				if (event) {
 					notifyEvents.push(event);
-				} else {
-					const event = await processAppendItem(db, source, raw, now);
-					if (event) {
-						itemsNew += 1;
-						notifyEvents.push(event);
-					}
 				}
 			}
 		} else {
