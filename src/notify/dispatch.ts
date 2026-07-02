@@ -1,6 +1,5 @@
 import type { Db } from '../db/client';
 import { markItemNotified } from '../db/repo';
-import { formatNotification } from './format';
 import { createTransports } from './transport';
 import type { NotificationEvent } from './types';
 
@@ -19,9 +18,8 @@ export async function dispatchNotifications(
 			continue;
 		}
 
-		const text = formatNotification(event);
 		const results = await Promise.allSettled(
-			transports.map((transport) => transport.send(env, text)),
+			transports.map((transport) => transport.send(env, event)),
 		);
 
 		for (const result of results) {

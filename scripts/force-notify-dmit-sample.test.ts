@@ -39,8 +39,8 @@ describe('force notify dmit sample', () => {
 		const item =
 			items.find((entry) => entry.state?.available === true) ?? items[0];
 
-		const text = formatNotification({
-			kind: 'state_change',
+		const event = {
+			kind: 'state_change' as const,
 			sourceId: 'dmit-stock',
 			sourceName: 'DMIT VPS Stock',
 			itemId: 0,
@@ -53,7 +53,9 @@ describe('force notify dmit sample', () => {
 					to: item.state?.available === true,
 				},
 			},
-		});
+		};
+
+		const text = formatNotification(event);
 
 		console.log('\n--- notification preview ---\n' + text + '\n------------------------------\n');
 
@@ -68,7 +70,7 @@ describe('force notify dmit sample', () => {
 			return;
 		}
 
-		await feishuTransport.send(env, text);
+		await feishuTransport.send(env, event);
 		console.log('已发送到飞书');
 	});
 });

@@ -1,10 +1,11 @@
 import { feishuTransport } from './feishu';
 import { telegramTransport } from './telegram';
+import type { NotificationEvent } from './types';
 
 export interface NotifierTransport {
 	readonly id: 'telegram' | 'feishu';
 	isConfigured(env: Env): boolean;
-	send(env: Env, text: string): Promise<void>;
+	send(env: Env, event: NotificationEvent): Promise<void>;
 }
 
 const allTransports: NotifierTransport[] = [telegramTransport, feishuTransport];

@@ -109,16 +109,21 @@ describe('processAppendItem', () => {
 		vi.mocked(getItemByExternalId).mockResolvedValue(null);
 		vi.mocked(insertItem).mockResolvedValue(42);
 
-		const result = await processAppendItem(db, source, rawItem, now);
-
-		expect(result).toMatchObject({
-			inserted: true,
-			updated: false,
-			event: {
-				kind: 'append',
-				itemId: 42,
-				title: rawItem.title,
+		const result = await processAppendItem(
+			db,
+			source,
+			{
+				...rawItem,
+				publishedAt: '2026-07-01T01:30:00.000Z',
 			},
+			now,
+		);
+
+		expect(result.event).toMatchObject({
+			kind: 'append',
+			itemId: 42,
+			title: rawItem.title,
+			publishedAt: Date.parse('2026-07-01T01:30:00.000Z'),
 		});
 		expect(insertItem).toHaveBeenCalledOnce();
 		expect(updateAppendItem).not.toHaveBeenCalled();
