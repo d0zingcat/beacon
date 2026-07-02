@@ -29,7 +29,7 @@
 | 数据库 | D1（SQLite） |
 | 任务队列 | Cloudflare Queues |
 | 定时调度 | Cron Triggers |
-| 浏览器自动化 | `@cloudflare/playwright`（非标准 `playwright` 包） |
+| 浏览器自动化 | `@cloudflare/puppeteer`（Browser Rendering） |
 | 通知 | Telegram Bot API |
 
 ## 3. 架构与数据流
@@ -75,7 +75,7 @@ beacon/
     │   ├── types.ts        # Source / RawItem / NotifyEvent
     │   ├── registry.ts     # 源注册表（无 side-effect import）
     │   ├── rss.ts          # RSS 基类
-    │   ├── browser.ts      # Playwright 基类 + withBrowserPage
+    │   ├── browser.ts      # Puppeteer 基类 + withBrowserPage
     │   └── examples/       # 占位源（在 index.ts 中统一加载）
     ├── crawler/
     │   ├── runner.ts       # 爬取主流程
@@ -162,7 +162,7 @@ curl http://localhost:8787/sources             # 返回 3 个占位源
 2. 使用 `createRssSource(...)` 注册
 3. 在 `src/sources/examples/index.ts` 添加 `import './your-source'`
 
-### state 型（Browser + Playwright）
+### state 型（Browser + Puppeteer）
 
 1. 同上新建文件
 2. 使用 `createBrowserSource(...)` + `withBrowserPage`
@@ -188,9 +188,9 @@ createBrowserSource(
 ### 已知限制
 
 - **Scheduler 简化**：每次 cron tick 将所有源入队，未按各源 `schedule` 精确匹配
-- **本地 Browser**：`wrangler.local.jsonc` 不含 Browser 绑定；本地 Playwright 需 `dev:remote` 或升级 wrangler 4.x
+- **本地 Browser**：`wrangler.local.jsonc` 不含 Browser 绑定；本地 Browser Rendering 需 `dev:remote` 或升级 wrangler 4.x
 - **wrangler 版本**：当前 3.x，`compatibility_date` 在本地会 fallback 到 runtime 支持的日期
-- **Playwright 约束**：Workers 内只能用 `@cloudflare/playwright`，不支持 Playwright Test、Firefox、录屏等
+- **Browser Rendering**：Workers 内通过 `@cloudflare/puppeteer` 使用 Cloudflare Browser Rendering；不支持完整 Node Puppeteer 生态（如本地 Chrome 路径、录屏等）
 
 ### 待办（按优先级）
 
@@ -205,7 +205,7 @@ createBrowserSource(
 
 | 决策 | 理由 |
 |------|------|
-| Playwright 而非 Puppeteer | 团队偏好；CF 官方支持 `@cloudflare/playwright`，本地 dev 体验更好 |
+| Puppeteer（Browser Rendering） | DMIT 等需 JS 渲染的页面；当前 `dmit-stock` 使用第三方聚合页 HTTP 抓取，browser extractor 保留供后续源使用 |
 | items + states 双表 | append 与 state 语义分离，state 保留历史轨迹 |
 | Queues 解耦爬取 | 避免 Cron  handler 超时，支持重试与 DLQ |
 | 源注册 side-effect 模式 | 新增源只需加文件 + import，不改核心逻辑 |
