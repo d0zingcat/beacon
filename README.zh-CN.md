@@ -147,12 +147,16 @@ curl -X POST "https://beacon.example.workers.dev/sources/bedrock-models/run?sync
 
 ## 已注册数据源
 
-| ID | 模式 | 抓取方式 | 状态 |
-|----|------|----------|------|
-| `cursor-changelog` | append | HTML 页面解析（cursor.com/changelog） | 已接入 |
-| `kiro-changelog` | append | RSS（kiro.dev/changelog） | 已接入 |
-| `bedrock-models` | append | Markdown 页面解析（AWS Bedrock 模型列表） | 已接入 |
-| `dmit-stock` | state | 网页解析（stock.qixi.me 库存聚合） | 已接入 |
+| ID | 模式 | 抽取器 | 说明 |
+|----|------|--------|------|
+| `cursor-changelog` | append | webpage | [Cursor Changelog](https://cursor.com/changelog) |
+| `cursor-blog` | append | webpage | [Cursor Blog](https://cursor.com/blog) |
+| `kiro-changelog` | append | feed | [Kiro Changelog](https://kiro.dev/changelog) RSS |
+| `openrouter-blog` | append | feed | [OpenRouter Blog](https://openrouter.ai/blog) RSS |
+| `openai-blog` | append | feed | [OpenAI News](https://openai.com/news) RSS |
+| `anthropic-blog` | append | webpage | [Anthropic News](https://www.anthropic.com/news) |
+| `bedrock-models` | append | webpage | [AWS Bedrock 模型列表](https://docs.aws.amazon.com/bedrock/latest/userguide/model-cards.md) |
+| `dmit-stock` | state | webpage | [DMIT VPS 库存](https://stock.qixi.me/) 聚合页 |
 
 源在 `src/sources/examples/` 定义，由 `src/sources/examples/index.ts` 聚合加载。
 
