@@ -2,8 +2,8 @@
 
 > [English README](./README.md) | [中文 README](./README.zh-CN.md)
 
-> 最后更新：2026-07-01  
-> 阶段：**首个数据源已接入**（`cursor-changelog` HTML 抓取 + append 落库），其余源仍为占位。
+> 最后更新：2026-07-02  
+> 阶段：**8 个数据源已接入**（7 个 append + 1 个 state + 通知限流），覆盖 changelog、博客、模型列表与 VPS 库存。
 
 ## 1. 项目定位
 
@@ -102,13 +102,18 @@ beacon/
 
 Migration 文件：`migrations/0001_init.sql`、`migrations/0002_notify_rate_limit.sql`
 
-## 6. 已注册的占位源
+## 6. 已注册数据源
 
-| ID | 类型 | 模式 | 状态 |
-|----|------|------|------|
-| `cursor-changelog` | rss | append | 已接入 HTML 抓取（cursor.com/changelog） |
-| `bedrock-models` | browser | append | 占位，`fetch` 返回 `[]` |
-| `vps-stock` | browser | state | 占位，`fetch` 返回 `[]` |
+| ID | 模式 | 抽取器 | 说明 |
+|----|------|--------|------|
+| `cursor-changelog` | append | webpage | cursor.com/changelog |
+| `cursor-blog` | append | webpage | cursor.com/blog |
+| `kiro-changelog` | append | feed | kiro.dev/changelog RSS |
+| `openrouter-blog` | append | feed | openrouter.ai/blog RSS |
+| `openai-blog` | append | feed | openai.com/news RSS |
+| `anthropic-blog` | append | webpage | anthropic.com/news |
+| `bedrock-models` | append | webpage | AWS Bedrock model-cards.md |
+| `dmit-stock` | state | webpage | stock.qixi.me DMIT 库存聚合 |
 
 源在 `src/sources/examples/` 定义，由 `src/sources/examples/index.ts` 聚合，在 `src/index.ts` 首行 `import './sources/examples'` 加载（避免 registry 循环依赖）。
 
@@ -143,7 +148,7 @@ pnpm run dev:remote   # 含 Browser 绑定，需 wrangler login
 pnpm run typecheck                              # ✅
 pnpm exec wrangler d1 migrations apply beacon-db --local  # ✅
 curl http://localhost:8787/health              # {"ok":true,"service":"beacon"}
-curl http://localhost:8787/sources             # 返回 3 个占位源
+curl http://localhost:8787/sources             # 返回 8 个已注册源
 ```
 
 ## 9. 部署 checklist
@@ -160,29 +165,18 @@ curl http://localhost:8787/sources             # 返回 3 个占位源
 ### append 型（RSS）
 
 1. 在 `src/sources/examples/` 新建文件
-2. 使用 `createRssSource(...)` 注册
+2. 使用 `createSource` + `createFeedExtractor` 注册
 3. 在 `src/sources/examples/index.ts` 添加 `import './your-source'`
+
+### append / state 型（网页）
+
+1. 同上新建文件
+2. 使用 `createSource` + `createWebpageExtractor`（state 模式可附加 `diff`）
+3. 在 `index.ts` 添加 import
 
 ### state 型（Browser + Puppeteer）
 
-1. 同上新建文件
-2. 使用 `createBrowserSource(...)` + `withBrowserPage`
-3. 可选实现 `diff(prev, next)` 自定义变化判定
-
-```ts
-import { createBrowserSource, withBrowserPage } from '../browser';
-
-createBrowserSource(
-  { id: 'my-stock', name: 'My VPS', mode: 'state', schedule: '*/15 * * * *' },
-  { url: 'https://example.com/vps' },
-  async (ctx, config) =>
-    withBrowserPage(ctx, async (page) => {
-      await page.goto(config.url);
-      // 解析页面，返回 RawItem[]，每项带 state 字段
-      return [];
-    }),
-);
-```
+需要 JS 渲染的页面使用 `kind: 'browser'` extractor；当前 `dmit-stock` 使用第三方聚合页 HTTP 抓取，browser extractor 保留供后续源使用。
 
 ## 11. 已知限制与 TODO
 
@@ -195,13 +189,13 @@ createBrowserSource(
 
 ### 待办（按优先级）
 
-1. ~~接入 `cursor-changelog` 真实抓取，跑通 append 全流程~~（已完成；Telegram 待配置）
-2. 配置远程 D1 并部署
-3. 接入 `bedrock-models`（Browser / append）
-4. 接入 `vps-stock`（Browser / state）
-5. Scheduler 按 per-source cron 过滤
-6. API 鉴权、Web 前端
-7. ~~通知限流（飞书）~~ — 已用 D1 全局 slot + 串行队列 + 11232 重试；Queue 异步方案见 [notify-queue-rate-limit-design.md](./docs/superpowers/specs/2026-07-02-notify-queue-rate-limit-design.md)
+1. ~~接入 `cursor-changelog` 真实抓取，跑通 append 全流程~~（已完成）
+2. ~~接入 `bedrock-models`、`kiro-changelog`、博客源、`dmit-stock`~~（已完成）
+3. 配置远程 D1 并部署
+4. Scheduler 按 per-source cron 过滤
+5. API 鉴权、Web 前端
+6. ~~通知限流（飞书）~~ — 已用 D1 全局 slot + 串行队列 + 11232 重试；Queue 异步方案见 [notify-queue-rate-limit-design.md](./docs/superpowers/specs/2026-07-02-notify-queue-rate-limit-design.md)
+7. 通用 VPS 库存监控（browser / state，替代早期 `vps-stock` 占位）
 
 ## 12. 关键设计决策
 

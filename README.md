@@ -142,12 +142,16 @@ Response includes `itemsNotified` (count of messages sent this run).
 
 ## Registered sources
 
-| ID | Mode | Fetch | Status |
-|----|------|-------|--------|
-| `cursor-changelog` | append | HTML (cursor.com/changelog) | Live |
-| `kiro-changelog` | append | RSS (kiro.dev/changelog) | Live |
-| `bedrock-models` | append | Markdown (AWS Bedrock model list) | Live |
-| `dmit-stock` | state | Webpage (stock.qixi.me aggregator) | Active |
+| ID | Mode | Extractor | Description |
+|----|------|-----------|-------------|
+| `cursor-changelog` | append | webpage | [Cursor Changelog](https://cursor.com/changelog) |
+| `cursor-blog` | append | webpage | [Cursor Blog](https://cursor.com/blog) |
+| `kiro-changelog` | append | feed | [Kiro Changelog](https://kiro.dev/changelog) RSS |
+| `openrouter-blog` | append | feed | [OpenRouter Blog](https://openrouter.ai/blog) RSS |
+| `openai-blog` | append | feed | [OpenAI News](https://openai.com/news) RSS |
+| `anthropic-blog` | append | webpage | [Anthropic News](https://www.anthropic.com/news) |
+| `bedrock-models` | append | webpage | [AWS Bedrock model list](https://docs.aws.amazon.com/bedrock/latest/userguide/model-cards.md) |
+| `dmit-stock` | state | webpage | [DMIT VPS stock](https://stock.qixi.me/) aggregator |
 
 Sources live under `src/sources/examples/`, loaded from `src/sources/examples/index.ts`.
 
