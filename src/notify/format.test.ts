@@ -6,12 +6,12 @@ describe('formatDmitStateDiff', () => {
 	it('formats available change with price from summary', () => {
 		expect(
 			formatDmitStateDiff({ available: { from: false, to: true } }, '$39.9/月'),
-		).toEqual(['库存: 缺货 → 有货', '价格: $39.9/月']);
+		).toEqual(['📦 库存: ❌ 缺货 → ✅ 有货', '💰 价格: $39.9/月']);
 	});
 
 	it('formats available change to out of stock without price', () => {
 		expect(formatDmitStateDiff({ available: { from: true, to: false } }, '缺货')).toEqual([
-			'库存: 有货 → 缺货',
+			'📦 库存: ✅ 有货 → ❌ 缺货',
 		]);
 	});
 
@@ -20,7 +20,7 @@ describe('formatDmitStateDiff', () => {
 			formatDmitStateDiff({
 				price: { from: '$39.9/月', to: '$49.9/月' },
 			}),
-		).toEqual(['价格: $39.9/月 → $49.9/月']);
+		).toEqual(['💰 价格: $39.9/月 → $49.9/月']);
 	});
 
 	it('formats snapshot state', () => {
@@ -32,7 +32,7 @@ describe('formatDmitStateDiff', () => {
 					source: 'stock.qixi.me',
 				},
 			}),
-		).toEqual(['库存: 有货', '价格: $39.9/月']);
+		).toEqual(['📦 库存: ✅ 有货', '💰 价格: $39.9/月']);
 	});
 });
 
@@ -50,10 +50,10 @@ describe('formatNotification', () => {
 			}),
 		).toBe(
 			[
-				'[beacon] 新条目 · Kiro Changelog',
+				'📰 [beacon] 新条目 · Kiro Changelog',
 				'New feature',
 				'A short summary',
-				'https://example.com/post',
+				'🔗 https://example.com/post',
 			].join('\n'),
 		);
 	});
@@ -72,11 +72,11 @@ describe('formatNotification', () => {
 			}),
 		).toBe(
 			[
-				'[beacon] 状态变化 · DMIT VPS Stock',
+				'🔔 [beacon] 状态变化 · DMIT VPS Stock',
 				'HKG.AS3.T1.TINY',
-				'库存: 缺货 → 有货',
-				'价格: $39.9/月',
-				'https://www.dmit.io/aff.php?aff=23808&pid=201',
+				'📦 库存: ❌ 缺货 → ✅ 有货',
+				'💰 价格: $39.9/月',
+				'🔗 https://www.dmit.io/aff.php?aff=23808&pid=201',
 			].join('\n'),
 		);
 	});
@@ -95,10 +95,10 @@ describe('formatNotification', () => {
 			}),
 		).toBe(
 			[
-				'[beacon] 状态变化 · Other Source',
+				'🔔 [beacon] 状态变化 · Other Source',
 				'Item A',
 				'{\n  "status": {\n    "from": "old",\n    "to": "new"\n  }\n}',
-				'https://example.com/item',
+				'🔗 https://example.com/item',
 			].join('\n'),
 		);
 	});
@@ -113,9 +113,9 @@ describe('formatNotification', () => {
 			}),
 		).toBe(
 			[
-				'[beacon] 抓取失败 · Kiro Changelog',
-				'source: kiro-changelog',
-				'RSS fetch failed: 403 Forbidden',
+				'⚠️ [beacon] 抓取失败 · Kiro Changelog',
+				'📌 source: kiro-changelog',
+				'❌ RSS fetch failed: 403 Forbidden',
 			].join('\n'),
 		);
 	});
