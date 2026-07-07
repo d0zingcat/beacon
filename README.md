@@ -11,7 +11,7 @@ Two source modes:
 
 ## Supported sources
 
-Beacon ships with **9 built-in sources**. Apply D1 migrations after deploy so RSS feed sources are registered.
+Beacon ships with **10 built-in sources**. Apply D1 migrations after deploy so RSS feed sources are registered.
 
 | ID | Mode | Extractor | Tracks |
 |----|------|-----------|--------|
@@ -23,11 +23,12 @@ Beacon ships with **9 built-in sources**. Apply D1 migrations after deploy so RS
 | `anthropic-blog` | append | webpage | [Anthropic News](https://www.anthropic.com/news) |
 | `bedrock-models` | append | webpage | [AWS Bedrock model list](https://docs.aws.amazon.com/bedrock/latest/userguide/model-cards.md) |
 | `hy-news` | append | webpage | [Tencent Hy News](https://hy.tencent.com/) (JSON API) |
+| `mimo-news` | append | webpage | [Xiaomi MiMo News](https://mimo.xiaomi.com/) (Rspress bundles) |
 | `dmit-stock` | state | webpage | [DMIT VPS stock](https://stock.qixi.me/) aggregator (notify on availability change) |
 
 | Category | Sources |
 |----------|---------|
-| Changelogs & blogs | `cursor-changelog`, `cursor-blog`, `kiro-changelog`, `openrouter-blog`, `openai-blog`, `anthropic-blog`, `hy-news` |
+| Changelogs & blogs | `cursor-changelog`, `cursor-blog`, `kiro-changelog`, `openrouter-blog`, `openai-blog`, `anthropic-blog`, `hy-news`, `mimo-news` |
 | Model catalogs | `bedrock-models` |
 | Infrastructure | `dmit-stock` |
 
