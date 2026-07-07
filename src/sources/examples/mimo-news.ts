@@ -10,6 +10,7 @@ const BLOG_ROUTE_RE = /\{path:"(\/blog\/[^"]+)"[^}]*preload:async\(\)=>/g;
 const SKIPPED_BLOG_PATHS = new Set(['/blog/', '/blog/blog1']);
 
 export interface MimoBlogRoute {
+	routePath: string;
 	slug: string;
 	chunkIds: string[];
 }
@@ -74,6 +75,7 @@ export function parseMimoBlogRoutes(routesJs: string): MimoBlogRoute[] {
 		}
 
 		routes.push({
+			routePath: path,
 			slug: path.replace(/^\/blog\//, ''),
 			chunkIds,
 		});
@@ -152,8 +154,110 @@ export function slugToMimoTitle(slug: string): string {
 	return result.join(' ');
 }
 
+export function buildMimoSiteUrl(path: string): string {
+	const normalized = path.startsWith('/') ? path : `/${path}`;
+	return `${MIMO_SITE_URL}${normalized}`;
+}
+
+/** Rspress cleanUrls normalization (route.cleanUrls is true on mimo.xiaomi.com). */
+export function normalizeMimoCleanUrl(path: string, cleanUrls = true): string {
+	if (!path) return '/';
+	const hashIndex = path.indexOf('#');
+	const url = hashIndex === -1 ? path : path.slice(0, hashIndex);
+	const hash = hashIndex === -1 ? '' : path.slice(hashIndex);
+
+	let normalized = url;
+	if (!cleanUrls) {
+		if (normalized.endsWith('/')) normalized += 'index.html';
+		else normalized += '.html';
+	} else {
+		if (normalized.endsWith('/')) normalized += 'index';
+		if (normalized.endsWith('.html')) normalized = normalized.replace(/\.html$/, '');
+	}
+
+	const withLeadingSlash = normalized.startsWith('/') ? normalized : `/${normalized}`;
+	return hash ? `${withLeadingSlash}${hash}` : withLeadingSlash;
+}
+
+/** Build public URL candidates from the route path embedded in Rspress bundles. */
+export function buildMimoUrlCandidates(routePath: string): string[] {
+	const candidates = new Set<string>();
+	const normalized = normalizeMimoCleanUrl(routePath);
+	candidates.add(buildMimoSiteUrl(normalized));
+	candidates.add(buildMimoSiteUrl(routePath));
+
+	const blogAlias = normalized.match(/^\/blog\/(.+)$/);
+	if (blogAlias?.[1]) {
+		candidates.add(buildMimoSiteUrl(`/${blogAlias[1]}`));
+	}
+
+	return [...candidates];
+}
+
 export function buildMimoNewsUrl(slug: string): string {
-	return `${MIMO_SITE_URL}/blog/${slug}`;
+	return buildMimoSiteUrl(`/${slug}`);
+}
+
+export function scoreMimoHeadResponse(response: Response): number {
+	if (!response.ok) return 0;
+
+	const disposition = response.headers.get('content-disposition') ?? '';
+	const length = Number(response.headers.get('content-length') ?? '0');
+
+	if (disposition.includes('filename="404.html"')) return 0;
+	if (disposition.includes('filename="index.html"') && length > 15_000) return 3;
+	if (disposition.includes('.html"') && length > 15_000) return 2;
+	if (length > 15_000) return 1;
+	if (length > 0 && length < 10_000) return 0;
+	return 0;
+}
+
+/** Prefer the URL whose HTML looks like a real article, not a SPA shell or directory listing. */
+export function scoreMimoPageHtml(html: string): number {
+	const title = html.match(/<title[^>]*>([^<]*)<\/title>/)?.[1] ?? '';
+	if (title === '404' || title.includes('Files within')) {
+		return 0;
+	}
+	if (title.includes('MiMo') || title.includes('Xiaomi')) {
+		return 3;
+	}
+	if (html.includes('name="description" content="') && html.length > 20_000) {
+		return 2;
+	}
+	if (html.length > 15_000) {
+		return 1;
+	}
+	return 0;
+}
+
+export async function resolveMimoNewsUrl(routePath: string, fetchFn: typeof fetch): Promise<string> {
+	const candidates = buildMimoUrlCandidates(routePath);
+	let bestUrl = buildMimoSiteUrl(normalizeMimoCleanUrl(routePath));
+	let bestScore = -1;
+
+	for (const url of candidates) {
+		const response = await fetchFn(url, {
+			method: 'HEAD',
+			headers: { 'user-agent': 'beacon/1.0 (+https://github.com/d0zingcat/beacon)' },
+		});
+
+		let score = scoreMimoHeadResponse(response);
+		if (score === 0 && response.ok) {
+			const bodyResponse = await fetchFn(url, {
+				headers: { 'user-agent': 'beacon/1.0 (+https://github.com/d0zingcat/beacon)' },
+			});
+			if (bodyResponse.ok) {
+				score = scoreMimoPageHtml(await bodyResponse.text());
+			}
+		}
+
+		if (score > bestScore) {
+			bestScore = score;
+			bestUrl = url;
+		}
+	}
+
+	return bestUrl;
 }
 
 export function parseMimoPublishedAt(date?: string): string | undefined {
@@ -254,7 +358,17 @@ export async function fetchMimoNewsList(fetchFn: typeof fetch): Promise<RawItem[
 		}
 	}
 
-	return parseMimoNewsRoutes(routes, chunkMap, (chunkId) => chunkCache.get(chunkId));
+	const items = parseMimoNewsRoutes(routes, chunkMap, (chunkId) => chunkCache.get(chunkId));
+	const routePathBySlug = new Map(routes.map((route) => [route.slug, route.routePath]));
+
+	await Promise.all(
+		items.map(async (item) => {
+			const routePath = routePathBySlug.get(item.externalId) ?? `/blog/${item.externalId}`;
+			item.url = await resolveMimoNewsUrl(routePath, fetchFn);
+		}),
+	);
+
+	return items;
 }
 
 createSource(
