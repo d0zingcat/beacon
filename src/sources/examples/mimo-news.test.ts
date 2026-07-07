@@ -1,12 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import {
 	buildMimoNewsItem,
+	buildMimoUrlCandidates,
 	decodeMimoJsString,
 	discoverMimoBundlePaths,
+	normalizeMimoCleanUrl,
 	parseAsyncChunkMap,
 	parseMimoBlogRoutes,
 	parseMimoFrontmatter,
 	parseMimoNewsRoutes,
+	resolveMimoNewsUrl,
+	scoreMimoHeadResponse,
+	scoreMimoPageHtml,
 	slugToMimoTitle,
 } from './mimo-news';
 
@@ -32,8 +37,8 @@ describe('parseMimoBlogRoutes', () => {
 	it('parses English blog routes and skips zh routes', () => {
 		const routes = parseMimoBlogRoutes(ROUTE_SNIPPET);
 		expect(routes).toEqual([
-			{ slug: 'mimo-code-long-horizon', chunkIds: ['6212', '3583', '1837'] },
-			{ slug: 'mimo-v2-flash', chunkIds: ['9389'] },
+			{ routePath: '/blog/mimo-code-long-horizon', slug: 'mimo-code-long-horizon', chunkIds: ['6212', '3583', '1837'] },
+			{ routePath: '/blog/mimo-v2-flash', slug: 'mimo-v2-flash', chunkIds: ['9389'] },
 		]);
 	});
 });
@@ -82,6 +87,103 @@ describe('decodeMimoJsString', () => {
 	});
 });
 
+describe('buildMimoUrlCandidates', () => {
+	it('derives clean and blog aliases from routePath', () => {
+		expect(buildMimoUrlCandidates('/blog/mimo-v2-5-asr')).toEqual([
+			'https://mimo.xiaomi.com/blog/mimo-v2-5-asr',
+			'https://mimo.xiaomi.com/mimo-v2-5-asr',
+		]);
+	});
+
+	it('keeps non-blog route paths as-is', () => {
+		expect(buildMimoUrlCandidates('/news/mimo-v2-6')).toEqual([
+			'https://mimo.xiaomi.com/news/mimo-v2-6',
+		]);
+	});
+});
+
+describe('normalizeMimoCleanUrl', () => {
+	it('strips .html when cleanUrls is enabled', () => {
+		expect(normalizeMimoCleanUrl('/blog/example.html')).toBe('/blog/example');
+	});
+});
+
+describe('scoreMimoHeadResponse', () => {
+	it('prefers pre-rendered index pages over spa shells', () => {
+		const article = new Response(null, {
+			status: 200,
+			headers: {
+				'content-length': '41101',
+				'content-disposition': 'inline; filename="index.html"',
+			},
+		});
+		const shell = new Response(null, {
+			status: 200,
+			headers: {
+				'content-length': '6279',
+				'content-disposition': 'inline; filename="mimo-v2-5-asr.html"',
+			},
+		});
+
+		expect(scoreMimoHeadResponse(article)).toBeGreaterThan(scoreMimoHeadResponse(shell));
+	});
+});
+
+describe('scoreMimoPageHtml', () => {
+	it('prefers pre-rendered article pages over directory listings', () => {
+		const article = `<title>MiMo-V2.5-ASR | Xiaomi</title>${'x'.repeat(30_000)}`;
+		const listing = '<title>Files within doc_build&#47;mimo-code-long-horizon&#47;</title>';
+		const spaShell = `<title data-rh="true"></title>${'x'.repeat(6_000)}`;
+		const blogArticle = `<title data-rh="true"></title><meta name="description" content="summary"/>${'x'.repeat(30_000)}`;
+
+		expect(scoreMimoPageHtml(article)).toBeGreaterThan(scoreMimoPageHtml(listing));
+		expect(scoreMimoPageHtml(article)).toBeGreaterThan(scoreMimoPageHtml(spaShell));
+		expect(scoreMimoPageHtml(blogArticle)).toBeGreaterThan(scoreMimoPageHtml(spaShell));
+	});
+});
+
+describe('resolveMimoNewsUrl', () => {
+	it('picks the candidate with the higher page score', async () => {
+		const url = await resolveMimoNewsUrl('/blog/mimo-v2-5-asr', async (input, init) => {
+			const href = String(input);
+			const headers =
+				href.endsWith('/blog/mimo-v2-5-asr')
+					? {
+							'content-length': '6279',
+							'content-disposition': 'inline; filename="mimo-v2-5-asr.html"',
+						}
+					: {
+							'content-length': '41101',
+							'content-disposition': 'inline; filename="index.html"',
+						};
+			return new Response(null, { status: 200, headers });
+		});
+
+		expect(url).toBe('https://mimo.xiaomi.com/mimo-v2-5-asr');
+	});
+
+	it('falls back to /blog/ when the plain slug is missing', async () => {
+		const url = await resolveMimoNewsUrl('/blog/mimo-v2-5-inference', async (input, init) => {
+			const href = String(input);
+			if (href.endsWith('/mimo-v2-5-inference') && init?.method === 'HEAD') {
+				return new Response(null, { status: 404, headers: { 'content-disposition': 'inline; filename="404.html"' } });
+			}
+			if (href.endsWith('/blog/mimo-v2-5-inference')) {
+				return new Response(null, {
+					status: 200,
+					headers: {
+						'content-length': '52331',
+						'content-disposition': 'inline; filename="mimo-v2-5-inference.html"',
+					},
+				});
+			}
+			return new Response('<title>404</title>', { status: 404 });
+		});
+
+		expect(url).toBe('https://mimo.xiaomi.com/blog/mimo-v2-5-inference');
+	});
+});
+
 describe('buildMimoNewsItem', () => {
 	it('uses frontmatter when available', () => {
 		expect(
@@ -92,7 +194,7 @@ describe('buildMimoNewsItem', () => {
 			}),
 		).toEqual({
 			externalId: 'mimo-code-long-horizon',
-			url: 'https://mimo.xiaomi.com/blog/mimo-code-long-horizon',
+			url: 'https://mimo.xiaomi.com/mimo-code-long-horizon',
 			title: 'MiMo Code',
 			summary: 'Long-horizon agent',
 			publishedAt: new Date('2026-06-10').toISOString(),
@@ -102,7 +204,7 @@ describe('buildMimoNewsItem', () => {
 	it('falls back to slug-based title for custom pages', () => {
 		expect(buildMimoNewsItem('mimo-v2-flash', null)).toEqual({
 			externalId: 'mimo-v2-flash',
-			url: 'https://mimo.xiaomi.com/blog/mimo-v2-flash',
+			url: 'https://mimo.xiaomi.com/mimo-v2-flash',
 			title: 'MiMo V2 Flash',
 			summary: undefined,
 			publishedAt: undefined,
@@ -115,8 +217,8 @@ describe('parseMimoNewsRoutes', () => {
 	it('maps routes to items using async chunks', () => {
 		const items = parseMimoNewsRoutes(
 			[
-				{ slug: 'mimo-code-long-horizon', chunkIds: ['6212', '1837'] },
-				{ slug: 'mimo-v2-flash', chunkIds: ['9389'] },
+				{ routePath: '/blog/mimo-code-long-horizon', slug: 'mimo-code-long-horizon', chunkIds: ['6212', '1837'] },
+				{ routePath: '/blog/mimo-v2-flash', slug: 'mimo-v2-flash', chunkIds: ['9389'] },
 			],
 			{ '1837': 'abc', '9389': 'def' },
 			(chunkId) => (chunkId === '1837' ? CHUNK_WITH_META : CHUNK_CUSTOM_ONLY),
