@@ -9,6 +9,32 @@ Two source modes:
 - **append** — blogs, changelogs, new model releases (dedupe by hash)
 - **state** — VPS stock, pricing, availability (notify on state diff)
 
+## Supported sources
+
+Beacon ships with **9 built-in sources**. Apply D1 migrations after deploy so RSS feed sources are registered.
+
+| ID | Mode | Extractor | Tracks |
+|----|------|-----------|--------|
+| `cursor-changelog` | append | webpage | [Cursor Changelog](https://cursor.com/changelog) |
+| `cursor-blog` | append | webpage | [Cursor Blog](https://cursor.com/blog) |
+| `kiro-changelog` | append | feed | [Kiro Changelog](https://kiro.dev/changelog) RSS |
+| `openrouter-blog` | append | feed | [OpenRouter Blog](https://openrouter.ai/blog) RSS |
+| `openai-blog` | append | feed | [OpenAI News](https://openai.com/news) RSS |
+| `anthropic-blog` | append | webpage | [Anthropic News](https://www.anthropic.com/news) |
+| `bedrock-models` | append | webpage | [AWS Bedrock model list](https://docs.aws.amazon.com/bedrock/latest/userguide/model-cards.md) |
+| `hy-news` | append | webpage | [Tencent Hy News](https://hy.tencent.com/) (JSON API) |
+| `dmit-stock` | state | webpage | [DMIT VPS stock](https://stock.qixi.me/) aggregator (notify on availability change) |
+
+| Category | Sources |
+|----------|---------|
+| Changelogs & blogs | `cursor-changelog`, `cursor-blog`, `kiro-changelog`, `openrouter-blog`, `openai-blog`, `anthropic-blog`, `hy-news` |
+| Model catalogs | `bedrock-models` |
+| Infrastructure | `dmit-stock` |
+
+Cron schedules (see `wrangler.jsonc`): blogs and RSS feeds run **hourly**; `bedrock-models` every **6 hours**; `dmit-stock` every **15 minutes**.
+
+Feed sources are seeded in D1 (`migrations/0003_feed_source_config.sql`) and loaded at startup. Webpage sources are defined in `src/sources/examples/`.
+
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button?paid=true)](https://deploy.workers.cloudflare.com/?url=https://github.com/d0zingcat/beacon&paid=true)
 
 > Requires **D1**, **Queues**, and **Browser Rendering** on a [paid Workers plan](https://developers.cloudflare.com/workers/platform/pricing/). The deploy button forks the repo and provisions D1 / Queue / Browser bindings via Workers Builds.
@@ -139,21 +165,6 @@ curl -X POST "https://beacon.example.workers.dev/sources/bedrock-models/run?sync
 ```
 
 Response includes `itemsNotified` (count of messages sent this run).
-
-## Registered sources
-
-| ID | Mode | Extractor | Description |
-|----|------|-----------|-------------|
-| `cursor-changelog` | append | webpage | [Cursor Changelog](https://cursor.com/changelog) |
-| `cursor-blog` | append | webpage | [Cursor Blog](https://cursor.com/blog) |
-| `kiro-changelog` | append | feed | [Kiro Changelog](https://kiro.dev/changelog) RSS |
-| `openrouter-blog` | append | feed | [OpenRouter Blog](https://openrouter.ai/blog) RSS |
-| `openai-blog` | append | feed | [OpenAI News](https://openai.com/news) RSS |
-| `anthropic-blog` | append | webpage | [Anthropic News](https://www.anthropic.com/news) |
-| `bedrock-models` | append | webpage | [AWS Bedrock model list](https://docs.aws.amazon.com/bedrock/latest/userguide/model-cards.md) |
-| `dmit-stock` | state | webpage | [DMIT VPS stock](https://stock.qixi.me/) aggregator |
-
-Sources live under `src/sources/examples/`, loaded from `src/sources/examples/index.ts`.
 
 ## Adding a source
 

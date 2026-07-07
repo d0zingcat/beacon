@@ -9,6 +9,32 @@
 - **append**：博客、changelog、新模型发布等只追加新条目的源
 - **state**：VPS 库存、价格、可用性等状态会反复变化的源
 
+## 支持的数据源
+
+Beacon 内置 **9 个数据源**。部署后请执行 D1 迁移，以注册 RSS 订阅类源。
+
+| ID | 模式 | 抽取器 | 监控内容 |
+|----|------|--------|----------|
+| `cursor-changelog` | append | webpage | [Cursor Changelog](https://cursor.com/changelog) |
+| `cursor-blog` | append | webpage | [Cursor Blog](https://cursor.com/blog) |
+| `kiro-changelog` | append | feed | [Kiro Changelog](https://kiro.dev/changelog) RSS |
+| `openrouter-blog` | append | feed | [OpenRouter Blog](https://openrouter.ai/blog) RSS |
+| `openai-blog` | append | feed | [OpenAI News](https://openai.com/news) RSS |
+| `anthropic-blog` | append | webpage | [Anthropic News](https://www.anthropic.com/news) |
+| `bedrock-models` | append | webpage | [AWS Bedrock 模型列表](https://docs.aws.amazon.com/bedrock/latest/userguide/model-cards.md) |
+| `hy-news` | append | webpage | [腾讯混元新闻](https://hy.tencent.com/)（JSON API） |
+| `dmit-stock` | state | webpage | [DMIT VPS 库存](https://stock.qixi.me/) 聚合页（可用性变化时通知） |
+
+| 分类 | 数据源 |
+|------|--------|
+| Changelog 与博客 | `cursor-changelog`、`cursor-blog`、`kiro-changelog`、`openrouter-blog`、`openai-blog`、`anthropic-blog`、`hy-news` |
+| 模型目录 | `bedrock-models` |
+| 基础设施 | `dmit-stock` |
+
+定时调度（见 `wrangler.jsonc`）：博客与 RSS **每小时**；`bedrock-models` **每 6 小时**；`dmit-stock` **每 15 分钟**。
+
+RSS 类源通过 D1 迁移写入（`migrations/0003_feed_source_config.sql`），启动时加载；网页类源定义在 `src/sources/examples/`。
+
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button?paid=true)](https://deploy.workers.cloudflare.com/?url=https://github.com/d0zingcat/beacon&paid=true)
 
 > 本项目依赖 **D1**、**Queues** 与 **Browser Rendering**，需 [Workers 付费计划](https://developers.cloudflare.com/workers/platform/pricing/)。点击上方按钮后，Cloudflare 会自动 Fork 仓库、创建 D1 / Queue / Browser 绑定，并配置 Workers Builds 持续部署。
@@ -144,21 +170,6 @@ curl -X POST "https://beacon.example.workers.dev/sources/bedrock-models/run?sync
 ```
 
 响应中的 `itemsNotified` 表示本次实际发送的通知条数。
-
-## 已注册数据源
-
-| ID | 模式 | 抽取器 | 说明 |
-|----|------|--------|------|
-| `cursor-changelog` | append | webpage | [Cursor Changelog](https://cursor.com/changelog) |
-| `cursor-blog` | append | webpage | [Cursor Blog](https://cursor.com/blog) |
-| `kiro-changelog` | append | feed | [Kiro Changelog](https://kiro.dev/changelog) RSS |
-| `openrouter-blog` | append | feed | [OpenRouter Blog](https://openrouter.ai/blog) RSS |
-| `openai-blog` | append | feed | [OpenAI News](https://openai.com/news) RSS |
-| `anthropic-blog` | append | webpage | [Anthropic News](https://www.anthropic.com/news) |
-| `bedrock-models` | append | webpage | [AWS Bedrock 模型列表](https://docs.aws.amazon.com/bedrock/latest/userguide/model-cards.md) |
-| `dmit-stock` | state | webpage | [DMIT VPS 库存](https://stock.qixi.me/) 聚合页 |
-
-源在 `src/sources/examples/` 定义，由 `src/sources/examples/index.ts` 聚合加载。
 
 ## 新增数据源
 
