@@ -5,3 +5,4 @@ import './bedrock-models';
 import './dmit-stock';
 import './hy-news';
 import './mimo-news';
+import './bigmodel-news';
