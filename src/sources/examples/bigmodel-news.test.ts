@@ -1,7 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
 	buildBigmodelNewsExternalId,
 	buildBigmodelNewsUrl,
+	fetchBigmodelNewsList,
 	parseBigmodelNewsMarkdown,
 	parseBigmodelUpdateBlocks,
 	parseBigmodelUpdateSummary,
@@ -106,5 +107,36 @@ describe('buildBigmodelNewsExternalId', () => {
 		expect(buildBigmodelNewsExternalId('feature-updates', '2025-05-07', 'title')).toBe(
 			'feature-updates:2025-05-07:title',
 		);
+	});
+});
+
+describe('fetchBigmodelNewsList', () => {
+	it('returns items from successful pages when another page fails', async () => {
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+		const fetchFn = vi.fn(async (url: string) => {
+			if (url.endsWith('/cn/update/new-releases.md')) {
+				return new Response(SAMPLE_MARKDOWN, { status: 200 });
+			}
+			return new Response('error', { status: 500, statusText: 'Internal Server Error' });
+		});
+
+		const items = await fetchBigmodelNewsList(fetchFn);
+
+		expect(items).toHaveLength(2);
+		expect(items[0]?.externalId).toBe('new-releases:2026-06-16:GLM-5.2 新一代旗舰模型上线');
+		expect(warn).toHaveBeenCalled();
+		warn.mockRestore();
+	});
+
+	it('throws when every page fails', async () => {
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+		const fetchFn = vi
+			.fn()
+			.mockResolvedValue(new Response('error', { status: 500, statusText: 'Internal Server Error' }));
+
+		await expect(fetchBigmodelNewsList(fetchFn)).rejects.toThrow(
+			'BigModel docs fetch failed for /cn/update/new-releases: 500 Internal Server Error',
+		);
+		warn.mockRestore();
 	});
 });

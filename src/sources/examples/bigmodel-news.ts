@@ -125,8 +125,34 @@ export async function fetchBigmodelNewsPage(
 }
 
 export async function fetchBigmodelNewsList(fetchFn: typeof fetch): Promise<RawItem[]> {
-	const pages = await Promise.all(BIGMODEL_NEWS_PAGES.map((page) => fetchBigmodelNewsPage(page, fetchFn)));
-	return pages.flat();
+	const results = await Promise.allSettled(
+		BIGMODEL_NEWS_PAGES.map((page) => fetchBigmodelNewsPage(page, fetchFn)),
+	);
+
+	const items: RawItem[] = [];
+	const errors: string[] = [];
+
+	for (let index = 0; index < results.length; index++) {
+		const result = results[index];
+		const page = BIGMODEL_NEWS_PAGES[index];
+		if (!result || !page) continue;
+
+		if (result.status === 'fulfilled') {
+			items.push(...result.value);
+			continue;
+		}
+
+		const message =
+			result.reason instanceof Error ? result.reason.message : String(result.reason);
+		errors.push(message);
+		console.warn(`BigModel docs page skipped (${page.path}): ${message}`);
+	}
+
+	if (items.length === 0 && errors.length > 0) {
+		throw new Error(errors.join('; '));
+	}
+
+	return items;
 }
 
 createSource(

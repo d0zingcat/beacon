@@ -1,3 +1,4 @@
+import { createRetryFetch } from '../fetch/retry';
 import type { NotificationEvent } from '../notify/types';
 import { getSource } from '../sources/registry';
 import { createDb } from '../db/client';
@@ -77,7 +78,7 @@ export async function runSource(
 	try {
 		const rawItems = await source.fetch({
 			env,
-			fetch: globalThis.fetch.bind(globalThis),
+			fetch: createRetryFetch(globalThis.fetch.bind(globalThis)),
 			browser: env.BROWSER,
 		});
 		itemsTotal = rawItems.length;
