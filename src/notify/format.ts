@@ -1,3 +1,4 @@
+import { formatAppendBatchEvent } from './format-batch';
 import { formatDmitStateChangeEvent } from './format-dmit';
 import { formatTitleWithPublishedAt } from './format-time';
 import type { NotificationEvent } from './types';
@@ -46,6 +47,8 @@ export function formatNotification(event: NotificationEvent): string {
 	switch (event.kind) {
 		case 'append':
 			return formatAppendEvent(event);
+		case 'append_batch':
+			return formatAppendBatchEvent(event);
 		case 'state_change':
 			return formatStateChangeEvent(event);
 		case 'crawl_error':

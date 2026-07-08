@@ -1,5 +1,6 @@
 import { reserveNotifySlot } from '../db/notify-rate-limit';
 import { formatDmitStateDiff } from './format-dmit';
+import { formatNotification } from './format';
 import { formatPublishedAt } from './format-time';
 import type { NotifierTransport } from './transport';
 import { createSerialRateLimiter, sleep } from './rate-limiter';
@@ -58,6 +59,13 @@ function textRow(text: string): FeishuPostRow {
 	return [{ tag: 'text', text }];
 }
 
+function buildAppendBatchPost(
+	event: Extract<NotificationEvent, { kind: 'append_batch' }>,
+): FeishuPostRow[] {
+	const text = formatNotification(event);
+	return text.split('\n').map((line) => textRow(line));
+}
+
 function buildAppendPost(
 	event: Extract<NotificationEvent, { kind: 'append' }>,
 ): FeishuPostRow[] {
@@ -93,6 +101,11 @@ export function buildFeishuNotificationPayload(event: NotificationEvent): string
 			return buildFeishuPostPayload(
 				`📰 新条目 · ${event.sourceName}`,
 				buildAppendPost(event),
+			);
+		case 'append_batch':
+			return buildFeishuPostPayload(
+				`📰 新条目 · ${event.sourceName}（${event.items.length} 条）`,
+				buildAppendBatchPost(event),
 			);
 		case 'state_change':
 			return buildFeishuPostPayload(

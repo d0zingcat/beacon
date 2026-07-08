@@ -30,6 +30,7 @@ export function buildFeedSourceFromRow(row: SourceRow): Source | null {
 			id: row.id,
 			name: row.name,
 			mode: 'append',
+			batchNotifyMaxItems: config.batchNotifyMaxItems,
 		},
 		createFeedExtractorFromConfig(config),
 	);

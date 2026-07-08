@@ -103,6 +103,33 @@ describe('dispatchNotifications', () => {
 		expect(markItemNotified).toHaveBeenCalledWith(db, 42);
 	});
 
+	it('marks all batch items notified when append_batch succeeds', async () => {
+		const db = mockDb();
+		vi.mocked(createTransports).mockReturnValue([
+			mockTransport({
+				id: 'telegram',
+				send: vi.fn().mockResolvedValue(undefined),
+			}),
+		]);
+
+		await dispatchNotifications({} as Env, db, [
+			{
+				kind: 'append_batch',
+				sourceId: 'openai-blog',
+				sourceName: 'OpenAI Blog',
+				maxItems: 10,
+				items: [
+					{ itemId: 1, title: 'One' },
+					{ itemId: 2, title: 'Two' },
+				],
+			},
+		]);
+
+		expect(markItemNotified).toHaveBeenCalledTimes(2);
+		expect(markItemNotified).toHaveBeenCalledWith(db, 1);
+		expect(markItemNotified).toHaveBeenCalledWith(db, 2);
+	});
+
 	it('does not mark item notified when all transports fail', async () => {
 		vi.mocked(createTransports).mockReturnValue([
 			mockTransport({

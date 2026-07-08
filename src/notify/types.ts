@@ -1,3 +1,10 @@
+export interface AppendNotificationItem {
+	itemId: number;
+	title: string;
+	url?: string;
+	publishedAt?: number;
+}
+
 export type NotificationEvent =
 	| {
 			kind: 'append';
@@ -8,6 +15,14 @@ export type NotificationEvent =
 			url?: string;
 			summary?: string;
 			publishedAt?: number;
+	  }
+	| {
+			kind: 'append_batch';
+			sourceId: string;
+			sourceName: string;
+			items: AppendNotificationItem[];
+			/** Max items to list before an overflow footer (per-source config). */
+			maxItems: number;
 	  }
 	| {
 			kind: 'state_change';

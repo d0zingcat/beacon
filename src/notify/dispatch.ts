@@ -32,5 +32,10 @@ export async function dispatchNotifications(
 		if (anyOk && event.kind === 'append') {
 			await markItemNotified(db, event.itemId);
 		}
+		if (anyOk && event.kind === 'append_batch') {
+			for (const item of event.items) {
+				await markItemNotified(db, item.itemId);
+			}
+		}
 	}
 }

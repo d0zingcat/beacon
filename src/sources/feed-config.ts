@@ -1,3 +1,5 @@
+import { DEFAULT_BATCH_NOTIFY_MAX_ITEMS } from '../config';
+
 export const DEFAULT_FEED_HEADERS: Record<string, string> = {
 	'user-agent': 'beacon/1.0 (+https://github.com/d0zingcat/beacon)',
 	accept: 'application/rss+xml, application/xml, text/xml',
@@ -7,6 +9,8 @@ export interface FeedSourceConfig {
 	feedUrl: string;
 	headers?: Record<string, string>;
 	format?: 'rss2';
+	/** Max items listed in a merged batch notification; falls back to DEFAULT_BATCH_NOTIFY_MAX_ITEMS */
+	batchNotifyMaxItems?: number;
 }
 
 export interface FeedSourceInput {
@@ -45,10 +49,21 @@ export function validateFeedSourceConfig(value: unknown): FeedSourceConfig | nul
 	if (record.format !== undefined && record.format !== 'rss2') {
 		return null;
 	}
+	if (record.batchNotifyMaxItems !== undefined) {
+		if (
+			typeof record.batchNotifyMaxItems !== 'number' ||
+			!Number.isInteger(record.batchNotifyMaxItems) ||
+			record.batchNotifyMaxItems < 1
+		) {
+			return null;
+		}
+	}
 	return {
 		feedUrl: record.feedUrl,
 		headers: record.headers as Record<string, string> | undefined,
 		format: record.format as 'rss2' | undefined,
+		batchNotifyMaxItems:
+			(record.batchNotifyMaxItems as number | undefined) ?? DEFAULT_BATCH_NOTIFY_MAX_ITEMS,
 	};
 }
 

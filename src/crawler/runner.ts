@@ -11,6 +11,8 @@ import {
 } from '../db/repo';
 import { processAppendItem } from './append';
 import { processStateItem, toStateChangeEvent } from './state';
+import { consolidateAppendNotifications } from '../notify/consolidate';
+import { DEFAULT_BATCH_NOTIFY_MAX_ITEMS } from '../config';
 import { dispatchNotifications } from '../notify/dispatch';
 
 export interface RunOptions {
@@ -133,9 +135,11 @@ export async function runSource(
 			}
 		}
 
-		const itemsNotified = notifyEvents.length;
+		const batchMaxItems = source.batchNotifyMaxItems ?? DEFAULT_BATCH_NOTIFY_MAX_ITEMS;
+		const consolidatedEvents = consolidateAppendNotifications(notifyEvents, batchMaxItems);
+		const itemsNotified = consolidatedEvents.length;
 
-		await dispatchNotifications(env, db, notifyEvents);
+		await dispatchNotifications(env, db, consolidatedEvents);
 		await finishRunLog(db, {
 			runId,
 			status: 'ok',
