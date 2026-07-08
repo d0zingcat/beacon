@@ -11,3 +11,5 @@ import './kimi-blog';
 import './qwen-blog';
 import './longcat-research';
 import './gemini-blog';
+import './deepseek-news';
+import './deepseek-updates';
