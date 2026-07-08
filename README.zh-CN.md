@@ -11,7 +11,7 @@
 
 ## 支持的数据源
 
-Beacon 内置 **15 个数据源**。部署后请执行 D1 迁移，以注册 RSS 订阅类源。
+Beacon 内置 **16 个数据源**。部署后请执行 D1 迁移，以注册 RSS 订阅类源。
 
 | ID | 模式 | 抽取器 | 监控内容 |
 |----|------|--------|----------|
@@ -30,11 +30,12 @@ Beacon 内置 **15 个数据源**。部署后请执行 D1 迁移，以注册 RSS
 | `kimi-blog` | append | webpage | [Kimi 研究博客](https://www.kimi.com/blog/)（月之暗面） |
 | `longcat-research` | append | webpage | [LongCat 研究](https://longcat.ai/)（美团，SPA bundle） |
 | `qwen-blog` | append | webpage | [Qwen 研究博客](https://qwen.ai/research)（阿里通义千问，page-config JSON API） |
+| `gemini-blog` | append | webpage | [Gemini 博客](https://deepmind.google/blog/)（Google DeepMind，服务端渲染卡片） |
 | `dmit-stock` | state | webpage | [DMIT VPS 库存](https://stock.qixi.me/) 聚合页（可用性变化时通知） |
 
 | 分类 | 数据源 |
 |------|--------|
-| Changelog 与博客 | `cursor-changelog`、`cursor-blog`、`kiro-changelog`、`openrouter-blog`、`openai-blog`、`lilianweng-blog`、`anthropic-blog`、`hy-news`、`mimo-news`、`bigmodel-news`、`minimax-news`、`kimi-blog`、`longcat-research`、`qwen-blog` |
+| Changelog 与博客 | `cursor-changelog`、`cursor-blog`、`kiro-changelog`、`openrouter-blog`、`openai-blog`、`lilianweng-blog`、`anthropic-blog`、`hy-news`、`mimo-news`、`bigmodel-news`、`minimax-news`、`kimi-blog`、`longcat-research`、`qwen-blog`、`gemini-blog` |
 | 模型目录 | `bedrock-models` |
 | 基础设施 | `dmit-stock` |
 
