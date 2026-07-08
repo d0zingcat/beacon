@@ -29,11 +29,12 @@ Beacon ships with **15 built-in sources**. Apply D1 migrations after deploy so R
 | `minimax-news` | append | webpage | [MiniMax News](https://www.minimaxi.com/news) (JSON API + docs release notes) |
 | `kimi-blog` | append | webpage | [Kimi Research Blog](https://www.kimi.com/blog/) (Moonshot AI) |
 | `longcat-research` | append | webpage | [LongCat Research](https://longcat.ai/) (Meituan, SPA bundle) |
+| `qwen-blog` | append | webpage | [Qwen Blog](https://qwen.ai/research) (Alibaba, page-config JSON API) |
 | `dmit-stock` | state | webpage | [DMIT VPS stock](https://stock.qixi.me/) aggregator (notify on availability change) |
 
 | Category | Sources |
 |----------|---------|
-| Changelogs & blogs | `cursor-changelog`, `cursor-blog`, `kiro-changelog`, `openrouter-blog`, `openai-blog`, `lilianweng-blog`, `anthropic-blog`, `hy-news`, `mimo-news`, `bigmodel-news`, `minimax-news`, `kimi-blog`, `longcat-research` |
+| Changelogs & blogs | `cursor-changelog`, `cursor-blog`, `kiro-changelog`, `openrouter-blog`, `openai-blog`, `lilianweng-blog`, `anthropic-blog`, `hy-news`, `mimo-news`, `bigmodel-news`, `minimax-news`, `kimi-blog`, `longcat-research`, `qwen-blog` |
 | Model catalogs | `bedrock-models` |
 | Infrastructure | `dmit-stock` |
 

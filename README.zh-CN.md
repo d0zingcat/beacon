@@ -29,11 +29,12 @@ Beacon 内置 **15 个数据源**。部署后请执行 D1 迁移，以注册 RSS
 | `minimax-news` | append | webpage | [MiniMax 新闻与更新](https://www.minimaxi.com/news)（JSON API + 文档发布说明） |
 | `kimi-blog` | append | webpage | [Kimi 研究博客](https://www.kimi.com/blog/)（月之暗面） |
 | `longcat-research` | append | webpage | [LongCat 研究](https://longcat.ai/)（美团，SPA bundle） |
+| `qwen-blog` | append | webpage | [Qwen 研究博客](https://qwen.ai/research)（阿里通义千问，page-config JSON API） |
 | `dmit-stock` | state | webpage | [DMIT VPS 库存](https://stock.qixi.me/) 聚合页（可用性变化时通知） |
 
 | 分类 | 数据源 |
 |------|--------|
-| Changelog 与博客 | `cursor-changelog`、`cursor-blog`、`kiro-changelog`、`openrouter-blog`、`openai-blog`、`lilianweng-blog`、`anthropic-blog`、`hy-news`、`mimo-news`、`bigmodel-news`、`minimax-news`、`kimi-blog`、`longcat-research` |
+| Changelog 与博客 | `cursor-changelog`、`cursor-blog`、`kiro-changelog`、`openrouter-blog`、`openai-blog`、`lilianweng-blog`、`anthropic-blog`、`hy-news`、`mimo-news`、`bigmodel-news`、`minimax-news`、`kimi-blog`、`longcat-research`、`qwen-blog` |
 | 模型目录 | `bedrock-models` |
 | 基础设施 | `dmit-stock` |
 
