@@ -28,6 +28,8 @@ export interface Source {
 	fetch(ctx: SourceContext): Promise<RawItem[]>;
 	normalize?(raw: RawItem): Omit<RawItem, 'raw'>;
 	diff?(prev: Record<string, unknown>, next: Record<string, unknown>): boolean;
+	/** Max items listed in a merged batch notification (append mode). */
+	batchNotifyMaxItems?: number;
 }
 
 export type { BrowserWorker, Page };

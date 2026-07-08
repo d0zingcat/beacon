@@ -34,6 +34,7 @@ describe('load-from-db', () => {
 			name: 'OpenAI Blog',
 			kind: 'feed',
 			mode: 'append',
+			batchNotifyMaxItems: 10,
 		});
 	});
 

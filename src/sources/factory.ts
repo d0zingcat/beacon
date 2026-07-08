@@ -9,6 +9,7 @@ export function buildSource(
 		mode: SourceMode;
 		normalize?: (raw: RawItem) => Omit<RawItem, 'raw'>;
 		diff?: Source['diff'];
+		batchNotifyMaxItems?: number;
 	},
 	extractor: Extractor,
 ): Source {
@@ -28,6 +29,7 @@ export function createSource(
 		mode: SourceMode;
 		normalize?: (raw: RawItem) => Omit<RawItem, 'raw'>;
 		diff?: Source['diff'];
+		batchNotifyMaxItems?: number;
 	},
 	extractor: Extractor,
 ): Source {
