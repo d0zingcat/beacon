@@ -3,7 +3,7 @@ import { reserveNotifySlot } from '../db/notify-rate-limit';
 import { formatDmitStateDiff } from './format-dmit';
 import { formatNotification } from './format';
 import { formatPublishedAt } from './format-time';
-import { htmlToMarkdown } from './html-to-markdown';
+import { escapeMarkdownInline, htmlToMarkdown } from './html-to-markdown';
 import type { NotifierTransport } from './transport';
 import { createSerialRateLimiter, sleep } from './rate-limiter';
 import { truncateNotificationText } from './truncate';
@@ -95,14 +95,22 @@ function titleMarkdown(title: string, url?: string, publishedAt?: number): strin
 	return `**${linked}**${stamp}`;
 }
 
+function summaryToMarkdown(event: Extract<NotificationEvent, { kind: 'append' }>): string {
+	if (!event.summary) return '';
+	// Only feed (RSS) summaries are HTML fragments; webpage/browser summaries
+	// are already plain text and must not be parsed as HTML.
+	if (event.sourceKind === 'feed') {
+		return htmlToMarkdown(event.summary);
+	}
+	return escapeMarkdownInline(event.summary);
+}
+
 function buildAppendCard(event: Extract<NotificationEvent, { kind: 'append' }>): string {
 	const elements: CardElement[] = [mdElement(titleMarkdown(event.title, event.url, event.publishedAt))];
 
-	if (event.summary) {
-		const body = htmlToMarkdown(event.summary);
-		if (body) {
-			elements.push({ tag: 'hr' }, mdElement(truncateNotificationText(body)));
-		}
+	const body = summaryToMarkdown(event);
+	if (body) {
+		elements.push({ tag: 'hr' }, mdElement(truncateNotificationText(body)));
 	}
 
 	if (event.url) {

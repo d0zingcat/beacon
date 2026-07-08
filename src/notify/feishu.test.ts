@@ -84,6 +84,7 @@ describe('buildFeishuNotificationPayload', () => {
 				kind: 'append',
 				sourceId: 'kiro-changelog',
 				sourceName: 'Kiro Changelog',
+				sourceKind: 'feed',
 				itemId: 1,
 				title: 'New feature',
 				url: 'https://example.com/post',
@@ -122,6 +123,7 @@ describe('buildFeishuNotificationPayload', () => {
 				kind: 'append',
 				sourceId: 'kiro-changelog',
 				sourceName: 'Kiro Changelog',
+				sourceKind: 'webpage',
 				itemId: 1,
 				title: 'New feature',
 				summary: 'plain summary',
@@ -130,7 +132,27 @@ describe('buildFeishuNotificationPayload', () => {
 		expect(payload.msg_type).toBe('interactive');
 		const elements = payload.card.body.elements;
 		expect(elements[0]).toEqual({ tag: 'markdown', content: '**New feature**' });
+		expect(elements[1]).toEqual({ tag: 'hr' });
+		expect(elements[2]).toEqual({ tag: 'markdown', content: 'plain summary' });
 		expect(elements.some((e: { tag: string }) => e.tag === 'button')).toBe(false);
+	});
+
+	it('escapes markdown chars in non-feed summaries instead of parsing html', () => {
+		const payload = JSON.parse(
+			buildFeishuNotificationPayload({
+				kind: 'append',
+				sourceId: 'bigmodel-news',
+				sourceName: 'BigModel News',
+				sourceKind: 'webpage',
+				itemId: 1,
+				title: 'Release',
+				url: 'https://example.com/release',
+				summary: 'price < $5 * special [note]',
+			}),
+		);
+		const bodyElements = payload.card.body.elements.filter((e: { tag: string }) => e.tag === 'markdown');
+		// Plain text must be escaped, not interpreted as HTML/markdown.
+		expect(bodyElements.some((e: { content: string }) => e.content === 'price < $5 \\* special \\[note\\]')).toBe(true);
 	});
 
 	it('builds append card without summary body when summary is empty', () => {
@@ -139,6 +161,7 @@ describe('buildFeishuNotificationPayload', () => {
 				kind: 'append',
 				sourceId: 'kiro-changelog',
 				sourceName: 'Kiro Changelog',
+				sourceKind: 'feed',
 				itemId: 1,
 				title: 'New feature',
 				url: 'https://example.com/post',
@@ -162,6 +185,7 @@ describe('buildFeishuNotificationPayload', () => {
 				kind: 'append_batch',
 				sourceId: 'kiro-changelog',
 				sourceName: 'Kiro Changelog',
+				sourceKind: 'feed',
 				maxItems: 10,
 				items: [
 					{ itemId: 1, title: 'First', url: 'https://example.com/1', publishedAt },
@@ -194,6 +218,7 @@ describe('buildFeishuNotificationPayload', () => {
 			kind: 'append' as const,
 			sourceId: 'kiro-changelog',
 			sourceName: 'Kiro Changelog',
+			sourceKind: 'feed' as const,
 			itemId: 1,
 			title: 'New feature',
 			url: 'https://example.com/post',

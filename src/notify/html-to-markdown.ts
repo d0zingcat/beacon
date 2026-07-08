@@ -340,6 +340,16 @@ function inlineEscape(text: string): string {
 	return text.replace(/([`*_\[\]])/g, '\\$1');
 }
 
+/**
+ * Escape markdown-meaningful characters in a plain (non-HTML) string so it can
+ * be safely placed inside a card `markdown` element without triggering
+ * formatting. Used for summaries that are already plain text (webpage/browser
+ * sources), as opposed to feed summaries which go through `htmlToMarkdown`.
+ */
+export function escapeMarkdownInline(text: string): string {
+	return inlineEscape(text);
+}
+
 const ENTITY_MAP: Record<string, string> = {
 	amp: '&',
 	lt: '<',
