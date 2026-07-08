@@ -105,15 +105,10 @@ describe('buildFeishuNotificationPayload', () => {
 						{ tag: 'hr' },
 						{ tag: 'markdown', content: 'Hello **world**' },
 						{
-							tag: 'action',
-							actions: [
-								{
-									tag: 'button',
-									text: { tag: 'plain_text', content: '查看原文' },
-									url: 'https://example.com/post',
-									type: 'primary',
-								},
-							],
+							tag: 'button',
+							text: { tag: 'plain_text', content: '查看原文' },
+							type: 'primary',
+							behaviors: [{ type: 'open_url', default_url: 'https://example.com/post' }],
 						},
 					],
 				},
@@ -135,7 +130,7 @@ describe('buildFeishuNotificationPayload', () => {
 		expect(payload.msg_type).toBe('interactive');
 		const elements = payload.card.body.elements;
 		expect(elements[0]).toEqual({ tag: 'markdown', content: '**New feature**' });
-		expect(elements.some((e: { tag: string }) => e.tag === 'action')).toBe(false);
+		expect(elements.some((e: { tag: string }) => e.tag === 'button')).toBe(false);
 	});
 
 	it('builds append card without summary body when summary is empty', () => {
@@ -153,15 +148,10 @@ describe('buildFeishuNotificationPayload', () => {
 		expect(elements).toEqual([
 			{ tag: 'markdown', content: '**[New feature](https://example.com/post)**' },
 			{
-				tag: 'action',
-				actions: [
-					{
-						tag: 'button',
-						text: { tag: 'plain_text', content: '查看原文' },
-						url: 'https://example.com/post',
-						type: 'primary',
-					},
-				],
+				tag: 'button',
+				text: { tag: 'plain_text', content: '查看原文' },
+				type: 'primary',
+				behaviors: [{ type: 'open_url', default_url: 'https://example.com/post' }],
 			},
 		]);
 	});

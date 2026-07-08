@@ -54,25 +54,25 @@ export function buildFeishuPostPayload(postTitle: string, content: FeishuPostRow
 	});
 }
 
-type CardElement = { tag: 'markdown'; content: string } | { tag: 'hr' } | { tag: 'action'; actions: CardAction[] };
-
-type CardAction = {
+type CardButton = {
 	tag: 'button';
 	text: { tag: 'plain_text'; content: string };
-	url: string;
 	type: 'primary' | 'default';
+	behaviors: { type: 'open_url'; default_url: string }[];
 };
+
+type CardElement = { tag: 'markdown'; content: string } | { tag: 'hr' } | CardButton;
 
 function mdElement(content: string): CardElement {
 	return { tag: 'markdown', content };
 }
 
-function viewSourceAction(url: string): CardAction {
+function viewSourceButton(url: string): CardButton {
 	return {
 		tag: 'button',
 		text: { tag: 'plain_text', content: '查看原文' },
-		url,
 		type: 'primary',
+		behaviors: [{ type: 'open_url', default_url: url }],
 	};
 }
 
@@ -106,10 +106,7 @@ function buildAppendCard(event: Extract<NotificationEvent, { kind: 'append' }>):
 	}
 
 	if (event.url) {
-		elements.push({
-			tag: 'action',
-			actions: [viewSourceAction(event.url)],
-		});
+		elements.push(viewSourceButton(event.url));
 	}
 
 	return buildFeishuCardPayload(`📰 新条目 · ${event.sourceName}`, elements);
