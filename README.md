@@ -11,7 +11,7 @@ Two source modes:
 
 ## Supported sources
 
-Beacon ships with **12 built-in sources**. Apply D1 migrations after deploy so RSS feed sources are registered.
+Beacon ships with **13 built-in sources**. Apply D1 migrations after deploy so RSS feed sources are registered.
 
 | ID | Mode | Extractor | Tracks |
 |----|------|-----------|--------|
@@ -20,6 +20,7 @@ Beacon ships with **12 built-in sources**. Apply D1 migrations after deploy so R
 | `kiro-changelog` | append | feed | [Kiro Changelog](https://kiro.dev/changelog) RSS |
 | `openrouter-blog` | append | feed | [OpenRouter Blog](https://openrouter.ai/blog) RSS |
 | `openai-blog` | append | feed | [OpenAI News](https://openai.com/news) RSS |
+| `lilianweng-blog` | append | feed | [Lil'Log](https://lilianweng.github.io/) RSS |
 | `anthropic-blog` | append | webpage | [Anthropic News](https://www.anthropic.com/news) |
 | `bedrock-models` | append | webpage | [AWS Bedrock model list](https://docs.aws.amazon.com/bedrock/latest/userguide/model-cards.md) |
 | `hy-news` | append | webpage | [Tencent Hy News](https://hy.tencent.com/) (JSON API) |
@@ -30,7 +31,7 @@ Beacon ships with **12 built-in sources**. Apply D1 migrations after deploy so R
 
 | Category | Sources |
 |----------|---------|
-| Changelogs & blogs | `cursor-changelog`, `cursor-blog`, `kiro-changelog`, `openrouter-blog`, `openai-blog`, `anthropic-blog`, `hy-news`, `mimo-news`, `bigmodel-news`, `minimax-news` |
+| Changelogs & blogs | `cursor-changelog`, `cursor-blog`, `kiro-changelog`, `openrouter-blog`, `openai-blog`, `lilianweng-blog`, `anthropic-blog`, `hy-news`, `mimo-news`, `bigmodel-news`, `minimax-news` |
 | Model catalogs | `bedrock-models` |
 | Infrastructure | `dmit-stock` |
 

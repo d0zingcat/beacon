@@ -29,6 +29,20 @@ const OPENAI_RSS = `<?xml version="1.0" encoding="UTF-8"?>
   </channel>
 </rss>`;
 
+const LILIANWENG_RSS = `<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0">
+  <channel>
+    <title>Lil&#39;Log</title>
+    <item>
+      <title>Harness Engineering for Self-Improvement</title>
+      <link>https://lilianweng.github.io/posts/2026-07-04-harness/</link>
+      <pubDate>Sat, 04 Jul 2026 00:00:00 +0000</pubDate>
+      <guid>https://lilianweng.github.io/posts/2026-07-04-harness/</guid>
+      <description>&lt;p&gt;The concept of &lt;strong&gt;recursive self-improvement (RSI)&lt;/strong&gt; dates back to I. J. Good (1965).&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>`;
+
 const OPENROUTER_RSS = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
   <channel>
@@ -65,6 +79,19 @@ describe('feed RSS regression fixtures', () => {
 				summary:
 					'New OpenAI Signals data shows how ChatGPT adoption is growing globally, with users increasing usage, exploring more capabilities, and driving growth across regions and languages.',
 				publishedAt: new Date('Tue, 30 Jun 2026 09:00:00 GMT').toISOString(),
+			},
+		]);
+	});
+
+	it('parses lilianweng blog feed items', () => {
+		expect(parseRssFeed(LILIANWENG_RSS)).toEqual([
+			{
+				externalId: 'https://lilianweng.github.io/posts/2026-07-04-harness/',
+				url: 'https://lilianweng.github.io/posts/2026-07-04-harness/',
+				title: 'Harness Engineering for Self-Improvement',
+				summary:
+					'<p>The concept of <strong>recursive self-improvement (RSI)</strong> dates back to I. J. Good (1965).</p>',
+				publishedAt: new Date('Sat, 04 Jul 2026 00:00:00 +0000').toISOString(),
 			},
 		]);
 	});
