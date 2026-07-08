@@ -10,3 +10,4 @@ import './minimax-news';
 import './kimi-blog';
 import './qwen-blog';
 import './longcat-research';
+import './gemini-blog';
