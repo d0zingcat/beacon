@@ -5,11 +5,18 @@ export interface AppendNotificationItem {
 	publishedAt?: number;
 }
 
+/**
+ * Extractor kind the append event originated from. Drives how `summary` is
+ * rendered: `feed` summaries are HTML fragments, others are plain text.
+ */
+export type AppendSourceKind = 'feed' | 'webpage' | 'browser';
+
 export type NotificationEvent =
 	| {
 			kind: 'append';
 			sourceId: string;
 			sourceName: string;
+			sourceKind: AppendSourceKind;
 			itemId: number;
 			title: string;
 			url?: string;
@@ -20,6 +27,7 @@ export type NotificationEvent =
 			kind: 'append_batch';
 			sourceId: string;
 			sourceName: string;
+			sourceKind: AppendSourceKind;
 			items: AppendNotificationItem[];
 			/** Max items to list before an overflow footer (per-source config). */
 			maxItems: number;

@@ -1,12 +1,7 @@
 import type { RawItem } from '../sources/types';
 import type { NotificationEvent } from '../notify/types';
 import type { Db } from '../db/client';
-import {
-	getItemByExternalId,
-	getItemByHash,
-	insertItem,
-	updateAppendItem,
-} from '../db/repo';
+import { getItemByExternalId, getItemByHash, insertItem, updateAppendItem } from '../db/repo';
 import { hashAppendItem } from './dedupe';
 import type { Source } from '../sources/types';
 
@@ -20,15 +15,12 @@ function normalizeItem(source: Source, raw: RawItem) {
 	return source.normalize ? source.normalize(raw) : raw;
 }
 
-function toAppendEvent(
-	source: Source,
-	itemId: number,
-	normalized: ReturnType<typeof normalizeItem>,
-): NotificationEvent {
+function toAppendEvent(source: Source, itemId: number, normalized: ReturnType<typeof normalizeItem>): NotificationEvent {
 	return {
 		kind: 'append',
 		sourceId: source.id,
 		sourceName: source.name,
+		sourceKind: source.kind,
 		itemId,
 		title: normalized.title,
 		url: normalized.url,

@@ -35,6 +35,7 @@ export function consolidateAppendNotifications(
 		kind: 'append_batch',
 		sourceId: appendEvents[0].sourceId,
 		sourceName: appendEvents[0].sourceName,
+		sourceKind: appendEvents[0].sourceKind,
 		maxItems: batchMaxItems,
 		items: appendEvents.map(toBatchItem),
 	};

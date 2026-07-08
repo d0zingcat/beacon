@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+	buildAppendPost,
 	buildFeishuNotificationPayload,
+	buildFeishuPostPayload,
 	buildFeishuTextPayload,
 	feishuTransport,
 	isFeishuRateLimitError,
@@ -76,91 +78,159 @@ describe('buildFeishuTextPayload', () => {
 });
 
 describe('buildFeishuNotificationPayload', () => {
-	it('builds append post with clickable title and published time', () => {
-		expect(
-			JSON.parse(
-				buildFeishuNotificationPayload({
-					kind: 'append',
-					sourceId: 'kiro-changelog',
-					sourceName: 'Kiro Changelog',
-					itemId: 1,
-					title: 'New feature',
-					url: 'https://example.com/post',
-					summary: 'A short summary',
-					publishedAt,
-				}),
-			),
-		).toEqual({
-			msg_type: 'post',
-			content: {
-				post: {
-					zh_cn: {
-						title: '📰 新条目 · Kiro Changelog',
-						content: [
-							[
-								{
-									tag: 'a',
-									text: 'New feature',
-									href: 'https://example.com/post',
-								},
-								{ tag: 'text', text: ` · ${formatPublishedAt(publishedAt)}` },
-							],
-							[{ tag: 'text', text: 'A short summary' }],
-						],
-					},
-				},
-			},
-		});
-	});
-
-	it('builds append post with clickable title and no url line', () => {
-		expect(
-			JSON.parse(
-				buildFeishuNotificationPayload({
-					kind: 'append',
-					sourceId: 'kiro-changelog',
-					sourceName: 'Kiro Changelog',
-					itemId: 1,
-					title: 'New feature',
-					url: 'https://example.com/post',
-					summary: 'A short summary',
-				}),
-			),
-		).toEqual({
-			msg_type: 'post',
-			content: {
-				post: {
-					zh_cn: {
-						title: '📰 新条目 · Kiro Changelog',
-						content: [
-							[
-								{
-									tag: 'a',
-									text: 'New feature',
-									href: 'https://example.com/post',
-								},
-							],
-							[{ tag: 'text', text: 'A short summary' }],
-						],
-					},
-				},
-			},
-		});
-	});
-
-	it('builds append post with plain title when url is missing', () => {
+	it('builds append card with markdown title, summary body and view-source button', () => {
 		const payload = JSON.parse(
 			buildFeishuNotificationPayload({
 				kind: 'append',
 				sourceId: 'kiro-changelog',
 				sourceName: 'Kiro Changelog',
+				sourceKind: 'feed',
 				itemId: 1,
 				title: 'New feature',
+				url: 'https://example.com/post',
+				summary: '<p>Hello <strong>world</strong></p>',
+				publishedAt,
 			}),
 		);
-		expect(payload.content.post.zh_cn.content[0]).toEqual([
-			{ tag: 'text', text: 'New feature' },
+		expect(payload).toEqual({
+			msg_type: 'interactive',
+			card: {
+				schema: '2.0',
+				header: { title: { tag: 'plain_text', content: '📰 新条目 · Kiro Changelog' } },
+				body: {
+					elements: [
+						{
+							tag: 'markdown',
+							content: `**[New feature](https://example.com/post)** · ${formatPublishedAt(publishedAt)}`,
+						},
+						{ tag: 'hr' },
+						{ tag: 'markdown', content: 'Hello **world**' },
+						{
+							tag: 'button',
+							text: { tag: 'plain_text', content: '查看原文' },
+							type: 'primary',
+							behaviors: [{ type: 'open_url', default_url: 'https://example.com/post' }],
+						},
+					],
+				},
+			},
+		});
+	});
+
+	it('builds append card without button when url is missing', () => {
+		const payload = JSON.parse(
+			buildFeishuNotificationPayload({
+				kind: 'append',
+				sourceId: 'kiro-changelog',
+				sourceName: 'Kiro Changelog',
+				sourceKind: 'webpage',
+				itemId: 1,
+				title: 'New feature',
+				summary: 'plain summary',
+			}),
+		);
+		expect(payload.msg_type).toBe('interactive');
+		const elements = payload.card.body.elements;
+		expect(elements[0]).toEqual({ tag: 'markdown', content: '**New feature**' });
+		expect(elements[1]).toEqual({ tag: 'hr' });
+		expect(elements[2]).toEqual({ tag: 'markdown', content: 'plain summary' });
+		expect(elements.some((e: { tag: string }) => e.tag === 'button')).toBe(false);
+	});
+
+	it('escapes markdown chars in non-feed summaries instead of parsing html', () => {
+		const payload = JSON.parse(
+			buildFeishuNotificationPayload({
+				kind: 'append',
+				sourceId: 'bigmodel-news',
+				sourceName: 'BigModel News',
+				sourceKind: 'webpage',
+				itemId: 1,
+				title: 'Release',
+				url: 'https://example.com/release',
+				summary: 'price < $5 * special [note]',
+			}),
+		);
+		const bodyElements = payload.card.body.elements.filter((e: { tag: string }) => e.tag === 'markdown');
+		// Plain text must be escaped, not interpreted as HTML/markdown.
+		expect(bodyElements.some((e: { content: string }) => e.content === 'price < $5 \\* special \\[note\\]')).toBe(true);
+	});
+
+	it('builds append card without summary body when summary is empty', () => {
+		const payload = JSON.parse(
+			buildFeishuNotificationPayload({
+				kind: 'append',
+				sourceId: 'kiro-changelog',
+				sourceName: 'Kiro Changelog',
+				sourceKind: 'feed',
+				itemId: 1,
+				title: 'New feature',
+				url: 'https://example.com/post',
+			}),
+		);
+		const elements = payload.card.body.elements;
+		expect(elements).toEqual([
+			{ tag: 'markdown', content: '**[New feature](https://example.com/post)**' },
+			{
+				tag: 'button',
+				text: { tag: 'plain_text', content: '查看原文' },
+				type: 'primary',
+				behaviors: [{ type: 'open_url', default_url: 'https://example.com/post' }],
+			},
 		]);
+	});
+
+	it('builds append_batch card with numbered markdown list', () => {
+		const payload = JSON.parse(
+			buildFeishuNotificationPayload({
+				kind: 'append_batch',
+				sourceId: 'kiro-changelog',
+				sourceName: 'Kiro Changelog',
+				sourceKind: 'feed',
+				maxItems: 10,
+				items: [
+					{ itemId: 1, title: 'First', url: 'https://example.com/1', publishedAt },
+					{ itemId: 2, title: 'Second' },
+				],
+			}),
+		);
+		expect(payload).toEqual({
+			msg_type: 'interactive',
+			card: {
+				schema: '2.0',
+				header: {
+					title: { tag: 'plain_text', content: '📰 新条目 · Kiro Changelog（2 条）' },
+				},
+				body: {
+					elements: [
+						{
+							tag: 'markdown',
+							content: `1. [First](https://example.com/1) · ${formatPublishedAt(publishedAt)}\n2. Second`,
+						},
+					],
+				},
+			},
+		});
+	});
+
+	it('rolls back to post payload when APPEND_CARD_ENABLED is false', () => {
+		// Snapshot of the legacy post shape; the flag-flip path must keep working.
+		const event = {
+			kind: 'append' as const,
+			sourceId: 'kiro-changelog',
+			sourceName: 'Kiro Changelog',
+			sourceKind: 'feed' as const,
+			itemId: 1,
+			title: 'New feature',
+			url: 'https://example.com/post',
+			summary: 'A short summary',
+		};
+		const cardPayload = JSON.parse(buildFeishuNotificationPayload(event));
+		expect(cardPayload.msg_type).toBe('interactive');
+
+		// The legacy post builder is still wired and produces the old shape.
+		const postPayload = JSON.parse(buildFeishuPostPayload(`📰 新条目 · ${event.sourceName}`, buildAppendPost(event)));
+		expect(postPayload.msg_type).toBe('post');
+		expect(postPayload.content.post.zh_cn.content[0]).toEqual([{ tag: 'a', text: 'New feature', href: 'https://example.com/post' }]);
 	});
 
 	it('builds dmit state_change post with diff lines and clickable title', () => {
@@ -236,11 +306,7 @@ describe('buildFeishuNotificationPayload', () => {
 		).toEqual({
 			msg_type: 'text',
 			content: {
-				text: [
-					'⚠️ 抓取失败 · Kiro Changelog',
-					'📌 source: kiro-changelog',
-					'❌ RSS fetch failed: 403 Forbidden',
-				].join('\n'),
+				text: ['⚠️ 抓取失败 · Kiro Changelog', '📌 source: kiro-changelog', '❌ RSS fetch failed: 403 Forbidden'].join('\n'),
 			},
 		});
 	});
@@ -266,9 +332,7 @@ describe('feishuTransport', () => {
 	});
 
 	it('sends post payload for append events', async () => {
-		const fetch = vi.fn().mockResolvedValue(
-			new Response(JSON.stringify({ code: 0, msg: 'success' }), { status: 200 }),
-		);
+		const fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({ code: 0, msg: 'success' }), { status: 200 }));
 		vi.stubGlobal('fetch', fetch);
 
 		const event = {
@@ -289,9 +353,7 @@ describe('feishuTransport', () => {
 	});
 
 	it('throws when http status is not ok', async () => {
-		const fetch = vi
-			.fn()
-			.mockResolvedValue(new Response('gateway error', { status: 502 }));
+		const fetch = vi.fn().mockResolvedValue(new Response('gateway error', { status: 502 }));
 		vi.stubGlobal('fetch', fetch);
 
 		await expect(
@@ -305,9 +367,7 @@ describe('feishuTransport', () => {
 	});
 
 	it('throws when response code is not zero', async () => {
-		const fetch = vi.fn().mockResolvedValue(
-			new Response(JSON.stringify({ code: 9499, msg: 'bad request' }), { status: 200 }),
-		);
+		const fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({ code: 9499, msg: 'bad request' }), { status: 200 }));
 		vi.stubGlobal('fetch', fetch);
 
 		await expect(
@@ -333,9 +393,7 @@ describe('feishuTransport', () => {
 					{ status: 200 },
 				),
 			)
-			.mockResolvedValueOnce(
-				new Response(JSON.stringify({ code: 0, msg: 'success' }), { status: 200 }),
-			);
+			.mockResolvedValueOnce(new Response(JSON.stringify({ code: 0, msg: 'success' }), { status: 200 }));
 		vi.stubGlobal('fetch', fetch);
 
 		const sendPromise = feishuTransport.send(env(), {
