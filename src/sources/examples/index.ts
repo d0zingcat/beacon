@@ -7,3 +7,4 @@ import './hy-news';
 import './mimo-news';
 import './bigmodel-news';
 import './minimax-news';
+import './kimi-blog';
