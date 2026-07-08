@@ -9,6 +9,7 @@
 		"dev": "wrangler dev --config wrangler.local.jsonc",
 		"start": "wrangler dev",
 		"test": "vitest",
+		"test:manual": "vitest run --config vitest.manual.config.mts",
 		"cf-typegen": "wrangler types",
 		"typecheck": "tsc --noEmit",
 		"dev:remote": "wrangler dev --remote"

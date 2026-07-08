@@ -1,29 +1,28 @@
-import { readFileSync, existsSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { buildFeishuNotificationPayload } from '../src/notify/feishu';
 import { formatNotification } from '../src/notify/format';
-import { feishuTransport } from '../src/notify/feishu';
-import {
-	parseQixiDmitStockPage,
-	QIXI_DMIT_STOCK_URL,
-} from '../src/sources/examples/dmit-stock';
+import { parseQixiDmitStockPage, QIXI_DMIT_STOCK_URL } from '../src/sources/examples/dmit-stock';
+// Bundled as a string at build time. The workers vitest pool shims `node:fs`
+// and `process.env` in a way that can't reach the real `.dev.vars` on disk, so
+// a `?raw` import (resolved by vite against the real filesystem) is the only
+// way to read local secrets inside this test.
+import devVarsRaw from '../.dev.vars?raw';
 
-function loadDevVars(): void {
-	if (!existsSync('.dev.vars')) return;
-	for (const line of readFileSync('.dev.vars', 'utf8').split('\n')) {
+function readDevVar(key: string): string | undefined {
+	for (const line of devVarsRaw.split('\n')) {
 		const trimmed = line.trim();
 		if (!trimmed || trimmed.startsWith('#')) continue;
 		const eq = trimmed.indexOf('=');
 		if (eq === -1) continue;
-		const key = trimmed.slice(0, eq).trim();
-		const value = trimmed.slice(eq + 1).trim();
-		if (!process.env[key]) process.env[key] = value;
+		if (trimmed.slice(0, eq).trim() === key) {
+			return trimmed.slice(eq + 1).trim();
+		}
 	}
+	return undefined;
 }
 
 describe('force notify dmit sample', () => {
 	it('sends one formatted in-stock notification', async () => {
-		loadDevVars();
-
 		const response = await fetch(QIXI_DMIT_STOCK_URL, {
 			headers: {
 				'user-agent': 'beacon/1.0 (+https://github.com/d0zingcat/beacon)',
@@ -36,8 +35,7 @@ describe('force notify dmit sample', () => {
 		const items = parseQixiDmitStockPage(html);
 		expect(items.length).toBeGreaterThan(0);
 
-		const item =
-			items.find((entry) => entry.state?.available === true) ?? items[0];
+		const item = items.find((entry) => entry.state?.available === true) ?? items[0];
 
 		const event = {
 			kind: 'state_change' as const,
@@ -56,21 +54,23 @@ describe('force notify dmit sample', () => {
 		};
 
 		const text = formatNotification(event);
-
 		console.log('\n--- notification preview ---\n' + text + '\n------------------------------\n');
 
-		const env = {
-			FEISHU_WEBHOOK_URL: process.env.FEISHU_WEBHOOK_URL ?? '',
-			TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN ?? '',
-			TELEGRAM_CHAT_ID: process.env.TELEGRAM_CHAT_ID ?? '',
-		} as Env;
-
-		if (!feishuTransport.isConfigured(env)) {
+		const webhook = readDevVar('FEISHU_WEBHOOK_URL');
+		if (!webhook) {
 			console.warn('跳过发送：未配置 FEISHU_WEBHOOK_URL（请创建 .dev.vars）');
 			return;
 		}
 
-		await feishuTransport.send(env, event);
-		console.log('已发送到飞书');
+		// POST directly rather than going through feishuTransport, which needs a
+		// D1 binding for rate-limit bookkeeping that isn't available here.
+		const sendResponse = await fetch(webhook, {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: buildFeishuNotificationPayload(event),
+		});
+		const body = await sendResponse.text();
+		console.log(`\n--- feishu response: ${sendResponse.status} ---\n${body}\n`);
+		expect(sendResponse.ok).toBe(true);
 	});
 });
