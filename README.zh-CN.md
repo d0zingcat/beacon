@@ -23,6 +23,10 @@ curl https://beacon.d0zingcat.workers.dev/sources
 # 查询近期条目
 curl "https://beacon.d0zingcat.workers.dev/items?limit=10"
 
+# 聚合 RSS 订阅（按源过滤，默认包含所有 append 源）
+curl "https://beacon.d0zingcat.workers.dev/feed"
+curl "https://beacon.d0zingcat.workers.dev/feed?source=openai-blog&source=anthropic-blog&limit=20"
+
 # 手动触发指定源的爬取
 curl -X POST "https://beacon.d0zingcat.workers.dev/sources/cursor-changelog/run"
 ```
@@ -203,6 +207,7 @@ curl -X POST "https://<your-worker>.<account>.workers.dev/sources/cursor-changel
 | GET | `/items/:id` | 单条详情 |
 | GET | `/items/:id/states` | 状态历史（state 模式） |
 | GET | `/items/:id/states/latest` | 最新状态 |
+| GET | `/feed` | 聚合 RSS 订阅（`append` 类源；`?source=` 过滤，可重复；`?limit=`、`?sort=published_at|created_at|id|updated_at`、`?order=asc|desc`） |
 | POST | `/sources/:id/run` | 手动触发爬取（入队；`?sync=1` 同步执行；`?forceNotify=1` 对本次拉取的全部条目发通知；设置 `RUN_TOKEN` 后需携带 Token） |
 | GET | `/runs` | 运行日志 |
 
