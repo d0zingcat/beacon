@@ -23,6 +23,10 @@ curl https://beacon.d0zingcat.workers.dev/sources
 # Query recent items
 curl "https://beacon.d0zingcat.workers.dev/items?limit=10"
 
+# Aggregated RSS feed (filter by source, default: all append sources)
+curl "https://beacon.d0zingcat.workers.dev/feed"
+curl "https://beacon.d0zingcat.workers.dev/feed?source=openai-blog&source=anthropic-blog&limit=20"
+
 # Trigger a crawl for a specific source
 curl -X POST "https://beacon.d0zingcat.workers.dev/sources/cursor-changelog/run"
 ```
@@ -198,6 +202,7 @@ Set it via `wrangler secret put RUN_TOKEN`.
 | GET | `/items/:id` | Item detail |
 | GET | `/items/:id/states` | State history (state mode) |
 | GET | `/items/:id/states/latest` | Latest state |
+| GET | `/feed` | Aggregated RSS feed of `append` sources (`?source=` filter, repeatable; `?limit=`, `?sort=published_at|created_at|id|updated_at`, `?order=asc|desc`) |
 | POST | `/sources/:id/run` | Trigger crawl (enqueue; `?sync=1` inline; `?forceNotify=1` notify all fetched items; requires `RUN_TOKEN` if set) |
 | GET | `/runs` | Run logs |
 
