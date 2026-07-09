@@ -13,3 +13,4 @@ import './longcat-research';
 import './gemini-blog';
 import './deepseek-news';
 import './deepseek-updates';
+import './seed-news';
