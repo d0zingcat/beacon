@@ -14,3 +14,4 @@ import './gemini-blog';
 import './deepseek-news';
 import './deepseek-updates';
 import './seed-news';
+import './xai-news';
