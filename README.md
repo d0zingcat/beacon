@@ -9,6 +9,26 @@ Two source modes:
 - **append** — blogs, changelogs, new model releases (dedupe by hash)
 - **state** — VPS stock, pricing, availability (notify on state diff)
 
+## Try it
+
+A public instance is deployed at **https://beacon.d0zingcat.workers.dev/** — you can use it directly without deploying your own.
+
+```bash
+# Health check
+curl https://beacon.d0zingcat.workers.dev/health
+
+# List supported sources
+curl https://beacon.d0zingcat.workers.dev/sources
+
+# Query recent items
+curl "https://beacon.d0zingcat.workers.dev/items?limit=10"
+
+# Trigger a crawl for a specific source
+curl -X POST "https://beacon.d0zingcat.workers.dev/sources/cursor-changelog/run"
+```
+
+> Note: the public instance is pre-configured with all supported sources. Crawl schedules run automatically. Custom notification channels (Telegram / Feishu) are not available on the shared instance.
+
 ## Supported sources
 
 Beacon ships with **16 built-in sources**. Apply D1 migrations after deploy so RSS feed sources are registered.
@@ -151,8 +171,22 @@ Set plain vars in `wrangler.jsonc` or secrets via `wrangler secret put`:
 | `TELEGRAM_BOT_TOKEN` | Telegram bot token | No |
 | `TELEGRAM_CHAT_ID` | Chat ID for alerts | No |
 | `FEISHU_WEBHOOK_URL` | Feishu bot webhook URL | No |
+| `RUN_TOKEN` | Bearer token to protect `POST /sources/:id/run` | No |
 
 Configure at least one channel for notifications. D1 / Queue / Browser use wrangler bindings.
+
+### RUN_TOKEN
+
+When `RUN_TOKEN` is set, `POST /sources/:id/run` requires the token via `Authorization: Bearer <token>` header or `?token=<token>` query parameter. Requests without a valid token receive `401 Unauthorized`. If unset, the endpoint remains open (default).
+
+```bash
+curl -X POST "https://<your-worker>.<account>.workers.dev/sources/cursor-changelog/run?token=your-secret-token"
+# or
+curl -X POST "https://<your-worker>.<account>.workers.dev/sources/cursor-changelog/run" \
+  -H "Authorization: Bearer your-secret-token"
+```
+
+Set it via `wrangler secret put RUN_TOKEN`.
 
 ## API
 
@@ -164,7 +198,7 @@ Configure at least one channel for notifications. D1 / Queue / Browser use wrang
 | GET | `/items/:id` | Item detail |
 | GET | `/items/:id/states` | State history (state mode) |
 | GET | `/items/:id/states/latest` | Latest state |
-| POST | `/sources/:id/run` | Trigger crawl (enqueue; `?sync=1` inline; `?forceNotify=1` notify all fetched items) |
+| POST | `/sources/:id/run` | Trigger crawl (enqueue; `?sync=1` inline; `?forceNotify=1` notify all fetched items; requires `RUN_TOKEN` if set) |
 | GET | `/runs` | Run logs |
 
 To verify notifications when there are no new items, run with `forceNotify=1` (sends one message per fetched item):

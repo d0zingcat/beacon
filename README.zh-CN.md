@@ -9,6 +9,26 @@
 - **append**：博客、changelog、新模型发布等只追加新条目的源
 - **state**：VPS 库存、价格、可用性等状态会反复变化的源
 
+## 在线体验
+
+项目已部署公共实例 **https://beacon.d0zingcat.workers.dev/** —— 无需自行部署即可直接使用。
+
+```bash
+# 健康检查
+curl https://beacon.d0zingcat.workers.dev/health
+
+# 列出支持的数据源
+curl https://beacon.d0zingcat.workers.dev/sources
+
+# 查询近期条目
+curl "https://beacon.d0zingcat.workers.dev/items?limit=10"
+
+# 手动触发指定源的爬取
+curl -X POST "https://beacon.d0zingcat.workers.dev/sources/cursor-changelog/run"
+```
+
+> 注意：公共实例已预配置所有支持的数据源，定时爬取会自动运行。共享实例不提供自定义通知渠道（Telegram / 飞书）。
+
 ## 支持的数据源
 
 Beacon 内置 **16 个数据源**。部署后请执行 D1 迁移，以注册 RSS 订阅类源。
@@ -156,8 +176,22 @@ D1_DATABASE_ID=<your-d1-uuid> pnpm run deploy:prod
 | `TELEGRAM_BOT_TOKEN` | Telegram Bot Token | 否 |
 | `TELEGRAM_CHAT_ID` | 接收通知的 Chat ID | 否 |
 | `FEISHU_WEBHOOK_URL` | 飞书群机器人 Webhook URL | 否 |
+| `RUN_TOKEN` | 用于保护 `POST /sources/:id/run` 的 Bearer Token | 否 |
 
 至少配置一种通知渠道，新条目或状态变化才会推送。D1 / Queue / Browser 通过 wrangler bindings 注入，无需单独配置。
+
+### RUN_TOKEN
+
+设置 `RUN_TOKEN` 后，`POST /sources/:id/run` 需要通过 `Authorization: Bearer <token>` 请求头或 `?token=<token>` 查询参数传入该 Token，否则返回 `401 Unauthorized`。未设置时接口保持开放（默认行为）。
+
+```bash
+curl -X POST "https://<your-worker>.<account>.workers.dev/sources/cursor-changelog/run?token=your-secret-token"
+# 或
+curl -X POST "https://<your-worker>.<account>.workers.dev/sources/cursor-changelog/run" \
+  -H "Authorization: Bearer your-secret-token"
+```
+
+通过 `wrangler secret put RUN_TOKEN` 进行设置。
 
 ## API
 
@@ -169,7 +203,7 @@ D1_DATABASE_ID=<your-d1-uuid> pnpm run deploy:prod
 | GET | `/items/:id` | 单条详情 |
 | GET | `/items/:id/states` | 状态历史（state 模式） |
 | GET | `/items/:id/states/latest` | 最新状态 |
-| POST | `/sources/:id/run` | 手动触发爬取（入队；`?sync=1` 同步执行；`?forceNotify=1` 对本次拉取的全部条目发通知） |
+| POST | `/sources/:id/run` | 手动触发爬取（入队；`?sync=1` 同步执行；`?forceNotify=1` 对本次拉取的全部条目发通知；设置 `RUN_TOKEN` 后需携带 Token） |
 | GET | `/runs` | 运行日志 |
 
 无新条目时验证通知渠道，可加 `forceNotify=1`（对本次拉取的每条数据各发一条消息）：
