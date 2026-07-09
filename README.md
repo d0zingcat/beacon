@@ -31,11 +31,12 @@ Beacon ships with **16 built-in sources**. Apply D1 migrations after deploy so R
 | `longcat-research` | append | webpage | [LongCat Research](https://longcat.ai/) (Meituan, SPA bundle) |
 | `qwen-blog` | append | webpage | [Qwen Blog](https://qwen.ai/research) (Alibaba, page-config JSON API) |
 | `gemini-blog` | append | webpage | [Gemini Blog](https://deepmind.google/blog/) (Google DeepMind, server-rendered cards) |
+| `xai-news` | append | webpage | [xAI News](https://x.ai/blog) (server-rendered Next.js cards) |
 | `dmit-stock` | state | webpage | [DMIT VPS stock](https://stock.qixi.me/) aggregator (notify on availability change) |
 
 | Category | Sources |
 |----------|---------|
-| Changelogs & blogs | `cursor-changelog`, `cursor-blog`, `kiro-changelog`, `openrouter-blog`, `openai-blog`, `lilianweng-blog`, `anthropic-blog`, `hy-news`, `mimo-news`, `bigmodel-news`, `minimax-news`, `kimi-blog`, `longcat-research`, `qwen-blog`, `gemini-blog` |
+| Changelogs & blogs | `cursor-changelog`, `cursor-blog`, `kiro-changelog`, `openrouter-blog`, `openai-blog`, `lilianweng-blog`, `anthropic-blog`, `hy-news`, `mimo-news`, `bigmodel-news`, `minimax-news`, `kimi-blog`, `longcat-research`, `qwen-blog`, `gemini-blog`, `xai-news` |
 | Model catalogs | `bedrock-models` |
 | Infrastructure | `dmit-stock` |
 
