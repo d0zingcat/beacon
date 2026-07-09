@@ -249,6 +249,16 @@ app.get('/items/:id/states/latest', async (c) => {
 });
 
 app.post('/sources/:id/run', async (c) => {
+	const expectedToken = c.env.RUN_TOKEN;
+	if (expectedToken) {
+		const provided =
+			c.req.header('Authorization')?.replace(/^Bearer\s+/i, '') ||
+			c.req.query('token');
+		if (provided !== expectedToken) {
+			return c.json({ error: 'Unauthorized' }, 401);
+		}
+	}
+
 	const sourceId = c.req.param('id');
 	const exists = listSources().some((source) => source.id === sourceId);
 	if (!exists) {
