@@ -226,8 +226,8 @@ function isRateLimitFailure(error: unknown): boolean {
 	return error.message.includes('11232') || error.message.includes('frequency limited');
 }
 
-async function sendOnce(env: Env, body: string): Promise<void> {
-	const response = await fetch(env.FEISHU_WEBHOOK_URL, {
+export async function sendFeishuWebhook(webhookUrl: string, body: string): Promise<void> {
+	const response = await fetch(webhookUrl, {
 		method: 'POST',
 		headers: { 'content-type': 'application/json' },
 		body,
@@ -240,6 +240,13 @@ async function sendOnce(env: Env, body: string): Promise<void> {
 	if (result.code !== undefined && result.code !== 0) {
 		throw new Error(`Feishu send failed: ${result.code} ${result.msg ?? ''}`);
 	}
+}
+
+async function sendOnce(env: Env, body: string): Promise<void> {
+	if (!env.FEISHU_WEBHOOK_URL) {
+		throw new Error('FEISHU_WEBHOOK_URL is not configured');
+	}
+	await sendFeishuWebhook(env.FEISHU_WEBHOOK_URL, body);
 }
 
 async function sendWithRetry(env: Env, body: string): Promise<void> {

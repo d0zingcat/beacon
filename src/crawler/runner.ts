@@ -14,6 +14,7 @@ import { processStateItem, toStateChangeEvent } from './state';
 import { consolidateAppendNotifications } from '../notify/consolidate';
 import { DEFAULT_BATCH_NOTIFY_MAX_ITEMS } from '../config';
 import { dispatchNotifications } from '../notify/dispatch';
+import { dispatchUserSubscriptions } from '../subscriptions/dispatch';
 
 export interface RunOptions {
 	/** Notify for every item fetched in this run, not only new/changed ones. */
@@ -140,6 +141,7 @@ export async function runSource(
 		const itemsNotified = consolidatedEvents.length;
 
 		await dispatchNotifications(env, db, consolidatedEvents);
+		await dispatchUserSubscriptions(env, db, consolidatedEvents);
 		await finishRunLog(db, {
 			runId,
 			status: 'ok',
