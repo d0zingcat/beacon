@@ -179,6 +179,16 @@ D1_DATABASE_ID=<your-d1-uuid> pnpm run deploy:prod
 
 首次 `deploy` 时 Wrangler 会自动创建 `beacon-crawl` 与 `beacon-crawl-dlq` 队列。
 
+### 邮件发送
+
+生产环境的邮箱 magic-link 登录通过 Cloudflare Email Sending 使用 `EMAIL` binding。部署前请先启用一个已验证的发件域名：
+
+```bash
+pnpm exec wrangler email sending enable <your-domain>
+```
+
+生产登录需要 `EMAIL` binding 以及已验证的发件域名；本地开发可设置 `APP_ENV=local` 将链接打印到日志。
+
 ## 环境变量
 
 在 `wrangler.jsonc` 的 `vars` 中配置明文变量，或通过 `wrangler secret put` 设置敏感值：

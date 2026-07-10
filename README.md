@@ -174,6 +174,16 @@ D1_DATABASE_ID=<your-d1-uuid> pnpm run deploy:prod
 
 First deploy auto-creates `beacon-crawl` and `beacon-crawl-dlq` queues.
 
+### Email sending
+
+Production magic-link login uses the `EMAIL` binding via Cloudflare Email Sending. Enable a verified sender domain before deploying:
+
+```bash
+pnpm exec wrangler email sending enable <your-domain>
+```
+
+Production login requires the `EMAIL` binding and a verified sender domain; local development can set `APP_ENV=local` to print links to logs.
+
 ## Environment variables
 
 Set plain vars in `wrangler.jsonc` or secrets via `wrangler secret put`:
