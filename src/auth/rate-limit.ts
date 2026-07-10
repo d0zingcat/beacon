@@ -2,15 +2,22 @@ import type { Db } from '../db/client';
 
 const MAX_ACQUIRE_ATTEMPTS = 20;
 
+export interface RateLimitResult {
+	allowed: boolean;
+	/** Undo the reservation. No-op when {@link allowed} is false. */
+	rollback: () => Promise<void>;
+}
+
 export async function reserveAuthRateLimit(
 	db: Db,
 	key: string,
 	now: number,
 	intervalMs: number,
-): Promise<boolean> {
+): Promise<RateLimitResult> {
+	const noop = async (): Promise<void> => {};
 	for (let attempt = 0; attempt < MAX_ACQUIRE_ATTEMPTS; attempt++) {
-		const row = await db.first<{ next_available_at: number }>(
-			`SELECT next_available_at FROM auth_rate_limit WHERE key = ? LIMIT 1`,
+		const row = await db.first<{ next_available_at: number; updated_at: number }>(
+			`SELECT next_available_at, updated_at FROM auth_rate_limit WHERE key = ? LIMIT 1`,
 			key,
 		);
 		if (!row) {
@@ -22,12 +29,17 @@ export async function reserveAuthRateLimit(
 				now,
 			);
 			if ((inserted.meta.changes ?? 0) > 0) {
-				return true;
+				return {
+					allowed: true,
+					rollback: async () => {
+						await db.run(`DELETE FROM auth_rate_limit WHERE key = ?`, key);
+					},
+				};
 			}
 			continue;
 		}
 		if (row.next_available_at > now) {
-			return false;
+			return { allowed: false, rollback: noop };
 		}
 		const updated = await db.run(
 			`UPDATE auth_rate_limit SET next_available_at = ?, updated_at = ? WHERE key = ? AND next_available_at = ?`,
@@ -37,7 +49,19 @@ export async function reserveAuthRateLimit(
 			row.next_available_at,
 		);
 		if ((updated.meta.changes ?? 0) > 0) {
-			return true;
+			const previousNext = row.next_available_at;
+			const previousUpdated = row.updated_at;
+			return {
+				allowed: true,
+				rollback: async () => {
+					await db.run(
+						`UPDATE auth_rate_limit SET next_available_at = ?, updated_at = ? WHERE key = ?`,
+						previousNext,
+						previousUpdated,
+						key,
+					);
+				},
+			};
 		}
 	}
 
