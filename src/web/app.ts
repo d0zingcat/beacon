@@ -141,6 +141,12 @@ async function defaultSaveSubscriptions(
 	});
 }
 
+function sourceGroupLabel(source: Source): string {
+	if (source.id === 'bedrock-models') return 'Model catalogs';
+	if (source.mode === 'state') return 'Infrastructure';
+	return 'Blogs and changelogs';
+}
+
 function renderSubscriptionPage(input: {
 	user: CurrentUser;
 	sources: Source[];
@@ -153,10 +159,19 @@ function renderSubscriptionPage(input: {
 		? `<p class="meta">${escapeHtml(channel.display_name)} · ${escapeHtml(channel.status)} · ${escapeHtml(channel.webhook_mask)}</p>`
 		: '<p class="meta">No Feishu webhook connected.</p>';
 	const disabled = channel ? '' : ' disabled';
-	const sourceList = input.sources
-		.map(
-			(source) =>
-				`<label class="source"><input type="checkbox" name="sourceId" value="${escapeHtml(source.id)}"${selected.has(source.id) ? ' checked' : ''}${disabled}> ${escapeHtml(source.name)} <span class="meta">${escapeHtml(source.mode)}</span></label>`,
+	const groups = new Map<string, Source[]>();
+	for (const source of input.sources) {
+		const label = sourceGroupLabel(source);
+		groups.set(label, [...(groups.get(label) ?? []), source]);
+	}
+	const sourceList = [...groups.entries()]
+		.map(([label, sources]) =>
+			`<fieldset class="panel"><legend>${escapeHtml(label)}</legend>${sources
+				.map(
+					(source) =>
+						`<label class="source"><input type="checkbox" name="sourceId" value="${escapeHtml(source.id)}"${selected.has(source.id) ? ' checked' : ''}${disabled}> ${escapeHtml(source.name)} <span class="meta">${escapeHtml(source.mode)}</span></label>`,
+				)
+				.join('')}</fieldset>`,
 		)
 		.join('');
 	const channelId = channel ? `<input type="hidden" name="channelId" value="${channel.id}">` : '';
