@@ -44,6 +44,32 @@ describe('auth web routes', () => {
 		expect(requestMagicLink).not.toHaveBeenCalled();
 	});
 
+	it('reserves the IP rate limit before the email rate limit', async () => {
+		const requestMagicLink = vi.fn().mockResolvedValue(undefined);
+		const reservedKeys: string[] = [];
+		const reserveRateLimit = vi.fn().mockImplementation(async (key: string) => {
+			reservedKeys.push(key);
+			return !key.startsWith('ip:');
+		});
+		const app = createAuthRoutes({ requestMagicLink, reserveRateLimit });
+
+		const response = await app.request(
+			'/auth/magic-link',
+			{
+				method: 'POST',
+				headers: { 'content-type': 'application/x-www-form-urlencoded' },
+				body: new URLSearchParams({ email: 'user@example.com' }),
+			},
+			ENV,
+		);
+
+		expect(response.status).toBe(200);
+		expect(await response.text()).toContain('Check your email');
+		expect(requestMagicLink).not.toHaveBeenCalled();
+		expect(reservedKeys).toEqual([expect.stringMatching(/^ip:/)]);
+		expect(reservedKeys.some((key) => key.startsWith('email:'))).toBe(false);
+	});
+
 	it('rejects malformed email input', async () => {
 		const requestMagicLink = vi.fn();
 		const app = createAuthRoutes({ requestMagicLink });

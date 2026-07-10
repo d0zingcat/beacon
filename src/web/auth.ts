@@ -153,9 +153,14 @@ export function createAuthRoutes(deps: AuthRouteDeps = {}): Hono<{ Bindings: Env
 				reserveAuthRateLimit(createDb(c.env), key, now, intervalMs));
 		const ip = c.req.header('cf-connecting-ip') ?? c.req.header('x-forwarded-for') ?? 'unknown';
 		const now = Date.now();
-		const emailAllowed = await reserveRateLimit(`email:${email}`, now, 60_000);
 		const ipAllowed = await reserveRateLimit(`ip:${ip}`, now, 60_000);
-		if (!emailAllowed || !ipAllowed) {
+		if (!ipAllowed) {
+			return c.html(
+				html('Check your email', '<main><p>Check your email for a sign-in link.</p></main>'),
+			);
+		}
+		const emailAllowed = await reserveRateLimit(`email:${email}`, now, 60_000);
+		if (!emailAllowed) {
 			return c.html(
 				html('Check your email', '<main><p>Check your email for a sign-in link.</p></main>'),
 			);
