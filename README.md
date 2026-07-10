@@ -215,6 +215,10 @@ Browsing is public. Subscription management requires email login. Users can add 
 
 `FEISHU_WEBHOOK_URL` remains the optional global deployment webhook. It is independent from user-managed Feishu webhooks.
 
+Users can pause and resume individual source subscriptions from `/app/subscriptions`.
+
+Per-user Feishu delivery is synchronous in the MVP. If subscription volume grows, move delivery to a dedicated notify queue before treating it as high-throughput infrastructure.
+
 ### RUN_TOKEN
 
 When `RUN_TOKEN` is set, `POST /sources/:id/run` requires the token via `Authorization: Bearer <token>` header or `?token=<token>` query parameter. Requests without a valid token receive `401 Unauthorized`. If unset, the endpoint remains open (default).

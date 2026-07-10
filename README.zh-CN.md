@@ -220,6 +220,10 @@ Beacon 由同一个 Worker 提供轻量网页界面：
 
 `FEISHU_WEBHOOK_URL` 仍然是可选的部署级全局 Webhook，和用户自行保存的飞书 Webhook 相互独立。
 
+用户可以在 `/app/subscriptions` 暂停和恢复单个数据源的订阅。
+
+MVP 阶段的用户飞书投递是同步的。如果订阅量增长，在将其视为高吞吐基础设施之前，请将投递迁移到专用的通知队列。
+
 ### RUN_TOKEN
 
 设置 `RUN_TOKEN` 后，`POST /sources/:id/run` 需要通过 `Authorization: Bearer <token>` 请求头或 `?token=<token>` 查询参数传入该 Token，否则返回 `401 Unauthorized`。未设置时接口保持开放（默认行为）。
