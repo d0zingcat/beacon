@@ -76,6 +76,34 @@ describe('subscription app routes', () => {
 		);
 	});
 
+	it('pauses a subscription owned by the current user', async () => {
+		const setSubscriptionEnabled = vi.fn().mockResolvedValue(true);
+		const app = createAppRoutes({
+			getCurrentUser: vi.fn().mockResolvedValue(USER),
+			setSubscriptionEnabled,
+		});
+
+		const response = await app.request('/app/subscriptions/99/pause', { method: 'POST' }, ENV);
+
+		expect(response.status).toBe(302);
+		expect(response.headers.get('location')).toBe('/app/subscriptions');
+		expect(setSubscriptionEnabled).toHaveBeenCalledWith(expect.anything(), USER, 99, false);
+	});
+
+	it('resumes a subscription owned by the current user', async () => {
+		const setSubscriptionEnabled = vi.fn().mockResolvedValue(true);
+		const app = createAppRoutes({
+			getCurrentUser: vi.fn().mockResolvedValue(USER),
+			setSubscriptionEnabled,
+		});
+
+		const response = await app.request('/app/subscriptions/99/resume', { method: 'POST' }, ENV);
+
+		expect(response.status).toBe(302);
+		expect(response.headers.get('location')).toBe('/app/subscriptions');
+		expect(setSubscriptionEnabled).toHaveBeenCalledWith(expect.anything(), USER, 99, true);
+	});
+
 	it('saves selected source subscriptions', async () => {
 		const saveSubscriptions = vi.fn().mockResolvedValue(undefined);
 		const app = createAppRoutes({
