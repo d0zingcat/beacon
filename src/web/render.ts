@@ -26,6 +26,11 @@ nav{display:flex;gap:16px;align-items:center}
 .item,.source,.panel{border:1px solid #ddd;background:#fff;border-radius:8px;padding:14px}
 .meta{color:#666;font-size:13px}
 .summary{color:#333}
+fieldset.panel{margin-top:16px;border:1px solid #ccc;border-radius:8px;padding:12px 14px}
+fieldset.panel:first-of-type{margin-top:0}
+fieldset.panel legend{font-weight:600;font-size:14px;color:#155e75;padding:0 6px}
+.source+.source{margin-top:8px}
+.source{padding:8px 10px;border:1px solid #e3e3e3;border-radius:6px;background:#fafafa}
 .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
 .pill{border:1px solid #bbb;border-radius:999px;padding:4px 10px;background:#fff}
 button,input{font:inherit}
