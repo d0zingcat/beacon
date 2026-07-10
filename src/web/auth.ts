@@ -17,6 +17,7 @@ import {
 	SESSION_TTL_MS,
 } from '../auth/session';
 import { emailSender, type EmailSender } from '../email/sender';
+import { reserveAuthRateLimit } from '../auth/rate-limit';
 
 const MAGIC_LINK_TTL_MS = 15 * 60 * 1000;
 
@@ -28,6 +29,7 @@ export interface AuthRouteDeps {
 	requestMagicLink?: (env: Env, email: string, origin: string) => Promise<void>;
 	verifyMagicLink?: (env: Env, token: string) => Promise<VerifyMagicLinkResult>;
 	logoutSession?: (env: Env, sessionToken: string | undefined) => Promise<void>;
+	reserveRateLimit?: (key: string, now: number, intervalMs: number) => Promise<boolean>;
 }
 
 function html(title: string, body: string): string {
@@ -145,6 +147,18 @@ export function createAuthRoutes(deps: AuthRouteDeps = {}): Hono<{ Bindings: Env
 		const email = normalizeEmail(form.email);
 		if (!email) {
 			return c.html(html('Invalid email', '<main><p>Invalid email address.</p></main>'), 400);
+		}
+		const reserveRateLimit =
+			deps.reserveRateLimit ?? ((key: string, now: number, intervalMs: number) =>
+				reserveAuthRateLimit(createDb(c.env), key, now, intervalMs));
+		const ip = c.req.header('cf-connecting-ip') ?? c.req.header('x-forwarded-for') ?? 'unknown';
+		const now = Date.now();
+		const emailAllowed = await reserveRateLimit(`email:${email}`, now, 60_000);
+		const ipAllowed = await reserveRateLimit(`ip:${ip}`, now, 60_000);
+		if (!emailAllowed || !ipAllowed) {
+			return c.html(
+				html('Check your email', '<main><p>Check your email for a sign-in link.</p></main>'),
+			);
 		}
 		await requestMagicLink(c.env, email, new URL(c.req.url).origin);
 		return c.html(
