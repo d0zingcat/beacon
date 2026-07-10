@@ -15,3 +15,4 @@ import './deepseek-news';
 import './deepseek-updates';
 import './seed-news';
 import './xai-news';
+import './meta-ai-blog';

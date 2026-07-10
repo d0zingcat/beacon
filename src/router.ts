@@ -24,6 +24,9 @@ import {
 	validateFeedSourceConfig,
 	validateFeedSourceInput,
 } from './sources/feed-config';
+import { createPublicWebRoutes } from './web/public';
+import { createAuthRoutes } from './web/auth';
+import { createAppRoutes } from './web/app';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -37,6 +40,10 @@ app.use('*', async (c, next) => {
 });
 
 app.get('/health', (c) => c.json({ ok: true, service: 'beacon' }));
+
+app.route('/', createPublicWebRoutes());
+app.route('/', createAuthRoutes());
+app.route('/', createAppRoutes());
 
 app.get('/sources', (c) => {
 	const sources = listSources().map((source) => ({

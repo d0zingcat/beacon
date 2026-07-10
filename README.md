@@ -23,6 +23,10 @@ curl https://beacon.d0zingcat.workers.dev/sources
 # Query recent items
 curl "https://beacon.d0zingcat.workers.dev/items?limit=10"
 
+# Browse in a browser:
+# https://beacon.d0zingcat.workers.dev/
+# https://beacon.d0zingcat.workers.dev/browse/sources
+
 # Aggregated RSS feed (filter by source, default: all append sources)
 curl "https://beacon.d0zingcat.workers.dev/feed"
 curl "https://beacon.d0zingcat.workers.dev/feed?source=openai-blog&source=anthropic-blog&limit=20"
@@ -80,6 +84,7 @@ Feed sources are seeded in D1 (`migrations/0003_feed_source_config.sql`) and loa
 - Browser Rendering (`@cloudflare/puppeteer`)
 - Cron Triggers
 - Hono (HTTP API)
+- Server-rendered public web UI
 - Telegram / Feishu (notifications)
 
 ## One-click deploy
@@ -90,6 +95,7 @@ Feed sources are seeded in D1 (`migrations/0003_feed_source_config.sql`) and loa
    - `TELEGRAM_BOT_TOKEN`
    - `TELEGRAM_CHAT_ID`
    - `FEISHU_WEBHOOK_URL`
+   - `WEBHOOK_ENCRYPTION_KEY` (32-byte secret for user Feishu webhooks)
 4. If tables are missing, apply migrations locally or in CI:
 
 ```bash
@@ -160,6 +166,7 @@ pnpm exec wrangler d1 migrations apply beacon-db --remote
 pnpm exec wrangler secret put TELEGRAM_BOT_TOKEN
 pnpm exec wrangler secret put TELEGRAM_CHAT_ID
 pnpm exec wrangler secret put FEISHU_WEBHOOK_URL   # optional
+pnpm exec wrangler secret put WEBHOOK_ENCRYPTION_KEY # required for user Feishu subscriptions
 
 D1_DATABASE_ID=<your-d1-uuid> pnpm run deploy:prod
 ```
@@ -176,8 +183,26 @@ Set plain vars in `wrangler.jsonc` or secrets via `wrangler secret put`:
 | `TELEGRAM_CHAT_ID` | Chat ID for alerts | No |
 | `FEISHU_WEBHOOK_URL` | Feishu bot webhook URL | No |
 | `RUN_TOKEN` | Bearer token to protect `POST /sources/:id/run` | No |
+| `WEBHOOK_ENCRYPTION_KEY` | 32-byte key used to encrypt user Feishu webhook URLs | For user subscriptions |
+| `APP_ENV` | Set to `local` to log magic-link emails instead of requiring the Email binding | No |
 
-Configure at least one channel for notifications. D1 / Queue / Browser use wrangler bindings.
+Configure at least one global channel for deployment-level notifications. User-managed Feishu subscriptions are separate and require `WEBHOOK_ENCRYPTION_KEY`. Magic-link login uses the Cloudflare Email Sending `EMAIL` binding in production; local development can set `APP_ENV=local` to print links to logs. D1 / Queue / Browser use wrangler bindings.
+
+### Web UI and subscriptions
+
+Beacon serves a small first-party web UI from the Worker:
+
+| Path | Description |
+|------|-------------|
+| `/` | Public recent item stream |
+| `/browse/sources` | Public source directory |
+| `/browse/sources/:id` | Public source detail and recent items |
+| `/login` | Email magic-link login |
+| `/app/subscriptions` | Logged-in Feishu subscription center |
+
+Browsing is public. Subscription management requires email login. Users can add their own Feishu custom bot webhook, receive a test message, and choose which sources should notify that webhook. Stored user webhooks are encrypted in D1 and are not returned to the browser after saving.
+
+`FEISHU_WEBHOOK_URL` remains the optional global deployment webhook. It is independent from user-managed Feishu webhooks.
 
 ### RUN_TOKEN
 
