@@ -33,7 +33,24 @@ export interface AuthRouteDeps {
 }
 
 function html(title: string, body: string): string {
-	return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title></head><body>${body}</body></html>`;
+	return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title><style>
+:root{color-scheme:light dark;font-family:Inter,ui-sans-serif,system-ui,sans-serif;line-height:1.5}
+body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#f7f7f4 0%,#e8f0f2 100%);color:#171717}
+.card{width:100%;max-width:380px;margin:16px;background:#fff;border:1px solid #e3e3e3;border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,.06);padding:40px 32px;box-sizing:border-box}
+.card h1{font-size:22px;margin:0 0 8px;color:#111}
+.card p.subtitle{color:#666;font-size:14px;margin:0 0 24px}
+label.field{display:block;font-size:13px;font-weight:600;color:#333;margin-bottom:6px}
+input[type=email]{width:100%;padding:11px 14px;border:1px solid #ccc;border-radius:8px;font:inherit;box-sizing:border-box;background:#fafafa}
+input[type=email]:focus{outline:none;border-color:#155e75;box-shadow:0 0 0 3px rgba(21,94,117,.12);background:#fff}
+button{width:100%;margin-top:16px;padding:12px;border:none;border-radius:8px;background:#155e75;color:#fff;font:inherit;font-weight:600;cursor:pointer}
+button:hover{background:#124c5f}
+button:active{transform:translateY(1px)}
+.message{text-align:center;padding:14px 16px;border-radius:8px;margin-bottom:20px;font-size:14px}
+.message.info{background:#e8f4f8;color:#155e75;border:1px solid #c2dce4}
+.message.error{background:#fde8e8;color:#a12020;border:1px solid #f3c2c2}
+.back{display:block;text-align:center;margin-top:20px;font-size:14px;color:#155e75;text-decoration:none}
+.back:hover{text-decoration:underline}
+</style></head><body>${body}</body></html>`;
 }
 
 function normalizeEmail(value: unknown): string | null {
@@ -137,7 +154,7 @@ export function createAuthRoutes(deps: AuthRouteDeps = {}): Hono<{ Bindings: Env
 		c.html(
 			html(
 				'Beacon login',
-				'<main><h1>Sign in to Beacon</h1><form method="post" action="/auth/magic-link"><input name="email" type="email" required><button type="submit">Send magic link</button></form></main>',
+				'<main class="card"><h1>Sign in to Beacon</h1><p class="subtitle">Enter your email and we\'ll send you a magic sign-in link.</p><form method="post" action="/auth/magic-link"><label class="field" for="email">Email address</label><input id="email" name="email" type="email" placeholder="you@example.com" required><button type="submit">Send magic link</button></form><a class="back" href="/">← Back to home</a></main>',
 			),
 		),
 	);
@@ -146,7 +163,7 @@ export function createAuthRoutes(deps: AuthRouteDeps = {}): Hono<{ Bindings: Env
 		const form = await parseForm(c.req.raw);
 		const email = normalizeEmail(form.email);
 		if (!email) {
-			return c.html(html('Invalid email', '<main><p>Invalid email address.</p></main>'), 400);
+			return c.html(html('Invalid email', '<main class="card"><div class="message error">Invalid email address.</div><a class="back" href="/login">← Back to sign in</a></main>'), 400);
 		}
 		const reserveRateLimit =
 			deps.reserveRateLimit ?? ((key: string, now: number, intervalMs: number) =>
@@ -156,19 +173,19 @@ export function createAuthRoutes(deps: AuthRouteDeps = {}): Hono<{ Bindings: Env
 		const ipResult = await reserveRateLimit(`ip:${ip}`, now, 60_000);
 		if (!ipResult.allowed) {
 			return c.html(
-				html('Check your email', '<main><p>Check your email for a sign-in link.</p></main>'),
+				html('Check your email', '<main class="card"><div class="message info">Check your email for a sign-in link.</div><a class="back" href="/login">← Back to sign in</a></main>'),
 			);
 		}
 		const emailResult = await reserveRateLimit(`email:${email}`, now, 60_000);
 		if (!emailResult.allowed) {
 			await ipResult.rollback();
 			return c.html(
-				html('Check your email', '<main><p>Check your email for a sign-in link.</p></main>'),
+				html('Check your email', '<main class="card"><div class="message info">Check your email for a sign-in link.</div><a class="back" href="/login">← Back to sign in</a></main>'),
 			);
 		}
 		await requestMagicLink(c.env, email, new URL(c.req.url).origin);
 		return c.html(
-			html('Check your email', '<main><p>Check your email for a sign-in link.</p></main>'),
+			html('Check your email', '<main class="card"><div class="message info">Check your email for a sign-in link.</div><a class="back" href="/login">← Back to sign in</a></main>'),
 		);
 	});
 
@@ -177,7 +194,7 @@ export function createAuthRoutes(deps: AuthRouteDeps = {}): Hono<{ Bindings: Env
 		const result = await verifyMagicLink(c.env, token);
 		if (!result.ok) {
 			const label = result.reason === 'expired' ? 'link expired' : 'link invalid';
-			return c.html(html('Login link failed', `<main><p>${label}</p></main>`), 400);
+			return c.html(html('Login link failed', `<main class="card"><div class="message error">${label}</div><a class="back" href="/login">← Try signing in again</a></main>`), 400);
 		}
 		c.header('Set-Cookie', createSessionCookie(result.sessionToken, result.expiresAt));
 		return c.redirect('/app/subscriptions');
