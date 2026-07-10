@@ -76,6 +76,56 @@ describe('subscription app routes', () => {
 		);
 	});
 
+	it('pauses a subscription owned by the current user', async () => {
+		const setSubscriptionEnabled = vi.fn().mockResolvedValue(true);
+		const app = createAppRoutes({
+			getCurrentUser: vi.fn().mockResolvedValue(USER),
+			setSubscriptionEnabled,
+		});
+
+		const response = await app.request('/app/subscriptions/99/pause', { method: 'POST' }, ENV);
+
+		expect(response.status).toBe(302);
+		expect(response.headers.get('location')).toBe('/app/subscriptions');
+		expect(setSubscriptionEnabled).toHaveBeenCalledWith(expect.anything(), USER, 99, false);
+	});
+
+	it('resumes a subscription owned by the current user', async () => {
+		const setSubscriptionEnabled = vi.fn().mockResolvedValue(true);
+		const app = createAppRoutes({
+			getCurrentUser: vi.fn().mockResolvedValue(USER),
+			setSubscriptionEnabled,
+		});
+
+		const response = await app.request('/app/subscriptions/99/resume', { method: 'POST' }, ENV);
+
+		expect(response.status).toBe(302);
+		expect(response.headers.get('location')).toBe('/app/subscriptions');
+		expect(setSubscriptionEnabled).toHaveBeenCalledWith(expect.anything(), USER, 99, true);
+	});
+
+	it('renders sources grouped by category', async () => {
+		const sources: Source[] = [
+			{ id: 'cursor-blog', name: 'Cursor Blog', kind: 'webpage', mode: 'append', fetch: async () => [] },
+			{ id: 'bedrock-models', name: 'Bedrock Models', kind: 'webpage', mode: 'append', fetch: async () => [] },
+			{ id: 'dmit-stock', name: 'Dmit Stock', kind: 'webpage', mode: 'state', fetch: async () => [] },
+		];
+		const app = createAppRoutes({
+			getCurrentUser: vi.fn().mockResolvedValue(USER),
+			listSources: () => sources,
+			listChannels: vi.fn().mockResolvedValue([]),
+			listSubscriptions: vi.fn().mockResolvedValue([]),
+		});
+
+		const response = await app.request('/app/subscriptions', undefined, ENV);
+		const body = await response.text();
+
+		expect(response.status).toBe(200);
+		expect(body).toContain('Blogs and changelogs');
+		expect(body).toContain('Model catalogs');
+		expect(body).toContain('Infrastructure');
+	});
+
 	it('saves selected source subscriptions', async () => {
 		const saveSubscriptions = vi.fn().mockResolvedValue(undefined);
 		const app = createAppRoutes({

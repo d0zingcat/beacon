@@ -11,6 +11,7 @@ import {
 	listFeishuChannelsByUser,
 	listSubscriptionsByUser,
 	replaceSubscriptions,
+	setSubscriptionEnabled as setSubscriptionEnabledInDb,
 	upsertFeishuChannel,
 	type FeishuChannelRow,
 	type SubscriptionRow,
@@ -40,6 +41,12 @@ export interface AppRouteDeps {
 		channelId: number,
 		sourceIds: string[],
 	) => Promise<void>;
+	setSubscriptionEnabled?: (
+		env: Env,
+		user: CurrentUser,
+		subscriptionId: number,
+		enabled: boolean,
+	) => Promise<boolean>;
 }
 
 type AppRouteEnv = {
@@ -134,6 +141,12 @@ async function defaultSaveSubscriptions(
 	});
 }
 
+function sourceGroupLabel(source: Source): string {
+	if (source.id === 'bedrock-models') return 'Model catalogs';
+	if (source.mode === 'state') return 'Infrastructure';
+	return 'Blogs and changelogs';
+}
+
 function renderSubscriptionPage(input: {
 	user: CurrentUser;
 	sources: Source[];
@@ -146,18 +159,36 @@ function renderSubscriptionPage(input: {
 		? `<p class="meta">${escapeHtml(channel.display_name)} · ${escapeHtml(channel.status)} · ${escapeHtml(channel.webhook_mask)}</p>`
 		: '<p class="meta">No Feishu webhook connected.</p>';
 	const disabled = channel ? '' : ' disabled';
-	const sourceList = input.sources
-		.map(
-			(source) =>
-				`<label class="source"><input type="checkbox" name="sourceId" value="${escapeHtml(source.id)}"${selected.has(source.id) ? ' checked' : ''}${disabled}> ${escapeHtml(source.name)} <span class="meta">${escapeHtml(source.mode)}</span></label>`,
+	const groups = new Map<string, Source[]>();
+	for (const source of input.sources) {
+		const label = sourceGroupLabel(source);
+		groups.set(label, [...(groups.get(label) ?? []), source]);
+	}
+	const sourceList = [...groups.entries()]
+		.map(([label, sources]) =>
+			`<fieldset class="panel"><legend>${escapeHtml(label)}</legend>${sources
+				.map(
+					(source) =>
+						`<label class="source"><input type="checkbox" name="sourceId" value="${escapeHtml(source.id)}"${selected.has(source.id) ? ' checked' : ''}${disabled}> ${escapeHtml(source.name)} <span class="meta">${escapeHtml(source.mode)}</span></label>`,
+				)
+				.join('')}</fieldset>`,
 		)
 		.join('');
 	const channelId = channel ? `<input type="hidden" name="channelId" value="${channel.id}">` : '';
+	const subscriptionControls = input.subscriptions
+		.map((subscription) => {
+			const source = input.sources.find((item) => item.id === subscription.source_id);
+			const action = subscription.enabled ? 'pause' : 'resume';
+			const label = subscription.enabled ? 'Pause' : 'Resume';
+			return `<form method="post" action="/app/subscriptions/${subscription.id}/${action}"><span>${escapeHtml(source?.name ?? subscription.source_id)}</span> <button type="submit">${label}</button></form>`;
+		})
+		.join('');
 	return page(
 		'Beacon subscriptions',
 		`<section class="panel"><h1>Subscriptions</h1><p>${escapeHtml(input.user.email)}</p>${channelInfo}</section>
 <section class="panel"><h2>Feishu webhook</h2><form method="post" action="/app/feishu-channels"><input name="displayName" placeholder="Bot name" required> <input name="webhookUrl" placeholder="https://open.feishu.cn/open-apis/bot/v2/hook/..." required> <button type="submit">Test and save</button></form></section>
-<section class="panel"><h2>Sources</h2><form method="post" action="/app/subscriptions">${channelId}<div class="grid">${sourceList}</div><p><button type="submit"${disabled}>Save subscriptions</button></p></form></section>`,
+<section class="panel"><h2>Sources</h2><form method="post" action="/app/subscriptions">${channelId}<div class="grid">${sourceList}</div><p><button type="submit"${disabled}>Save subscriptions</button></p></form></section>
+<section class="panel"><h2>Active subscriptions</h2>${subscriptionControls}</section>`,
 	);
 }
 
@@ -177,6 +208,15 @@ export function createAppRoutes(deps: AppRouteDeps = {}): Hono<AppRouteEnv> {
 			sendFeishuWebhook(webhookUrl, buildFeishuTextPayload('Beacon Feishu webhook test succeeded.')));
 	const saveFeishuChannel = deps.saveFeishuChannel ?? defaultSaveFeishuChannel;
 	const saveSubscriptions = deps.saveSubscriptions ?? defaultSaveSubscriptions;
+	const setSubscriptionEnabled =
+		deps.setSubscriptionEnabled ??
+		((env, user, subscriptionId, enabled) =>
+			setSubscriptionEnabledInDb(createDb(env), {
+				userId: user.id,
+				subscriptionId,
+				enabled,
+				now: Date.now(),
+			}));
 
 	app.use('/app/*', async (c, next) => {
 		const user = await requireUser(c.env, c.req.header('cookie'), getCurrentUser);
@@ -222,6 +262,18 @@ export function createAppRoutes(deps: AppRouteDeps = {}): Hono<AppRouteEnv> {
 			return c.html(page('Invalid channel', '<p>Invalid Feishu channel.</p>'), 400);
 		}
 		await saveSubscriptions(c.env, user, channelId, all(form.sourceId));
+		return c.redirect('/app/subscriptions');
+	});
+
+	app.post('/app/subscriptions/:id/pause', async (c) => {
+		const user = c.get('user') as CurrentUser;
+		await setSubscriptionEnabled(c.env, user, Number(c.req.param('id')), false);
+		return c.redirect('/app/subscriptions');
+	});
+
+	app.post('/app/subscriptions/:id/resume', async (c) => {
+		const user = c.get('user') as CurrentUser;
+		await setSubscriptionEnabled(c.env, user, Number(c.req.param('id')), true);
 		return c.redirect('/app/subscriptions');
 	});
 

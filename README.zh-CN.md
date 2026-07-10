@@ -179,6 +179,16 @@ D1_DATABASE_ID=<your-d1-uuid> pnpm run deploy:prod
 
 首次 `deploy` 时 Wrangler 会自动创建 `beacon-crawl` 与 `beacon-crawl-dlq` 队列。
 
+### 邮件发送
+
+生产环境的邮箱 magic-link 登录通过 Cloudflare Email Sending 使用 `EMAIL` binding。部署前请先启用一个已验证的发件域名：
+
+```bash
+pnpm exec wrangler email sending enable <your-domain>
+```
+
+生产登录需要 `EMAIL` binding 以及已验证的发件域名；本地开发可设置 `APP_ENV=local` 将链接打印到日志。
+
 ## 环境变量
 
 在 `wrangler.jsonc` 的 `vars` 中配置明文变量，或通过 `wrangler secret put` 设置敏感值：
@@ -209,6 +219,10 @@ Beacon 由同一个 Worker 提供轻量网页界面：
 浏览无需登录；管理订阅需要邮箱登录。用户可以添加自己的飞书自定义机器人 Webhook，收到测试消息后选择要订阅的数据源。保存后的用户 Webhook 会加密存储在 D1 中，不会再完整返回给浏览器。
 
 `FEISHU_WEBHOOK_URL` 仍然是可选的部署级全局 Webhook，和用户自行保存的飞书 Webhook 相互独立。
+
+用户可以在 `/app/subscriptions` 暂停和恢复单个数据源的订阅。
+
+MVP 阶段的用户飞书投递是同步的。如果订阅量增长，在将其视为高吞吐基础设施之前，请将投递迁移到专用的通知队列。
 
 ### RUN_TOKEN
 

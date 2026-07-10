@@ -174,6 +174,16 @@ D1_DATABASE_ID=<your-d1-uuid> pnpm run deploy:prod
 
 First deploy auto-creates `beacon-crawl` and `beacon-crawl-dlq` queues.
 
+### Email sending
+
+Production magic-link login uses the `EMAIL` binding via Cloudflare Email Sending. Enable a verified sender domain before deploying:
+
+```bash
+pnpm exec wrangler email sending enable <your-domain>
+```
+
+Production login requires the `EMAIL` binding and a verified sender domain; local development can set `APP_ENV=local` to print links to logs.
+
 ## Environment variables
 
 Set plain vars in `wrangler.jsonc` or secrets via `wrangler secret put`:
@@ -204,6 +214,10 @@ Beacon serves a small first-party web UI from the Worker:
 Browsing is public. Subscription management requires email login. Users can add their own Feishu custom bot webhook, receive a test message, and choose which sources should notify that webhook. Stored user webhooks are encrypted in D1 and are not returned to the browser after saving.
 
 `FEISHU_WEBHOOK_URL` remains the optional global deployment webhook. It is independent from user-managed Feishu webhooks.
+
+Users can pause and resume individual source subscriptions from `/app/subscriptions`.
+
+Per-user Feishu delivery is synchronous in the MVP. If subscription volume grows, move delivery to a dedicated notify queue before treating it as high-throughput infrastructure.
 
 ### RUN_TOKEN
 

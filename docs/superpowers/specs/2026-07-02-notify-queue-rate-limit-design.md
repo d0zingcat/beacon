@@ -125,3 +125,7 @@ Trigger any of:
 - Feishu rich cards or signing.
 - Per-source or per-channel routing rules.
 - Merging multiple events into one message (separate backlog item: notification aggregation).
+
+## User subscription delivery
+
+The web subscription MVP sends per-user Feishu notifications synchronously from `dispatchUserSubscriptions()`. A future queue implementation should include user-channel payloads, delivery IDs, and channel failure state updates, not only the legacy global `items.notified` flow.

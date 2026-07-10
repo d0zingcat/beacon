@@ -174,6 +174,22 @@ export async function listSubscriptionsByUser(
 	);
 }
 
+export async function setSubscriptionEnabled(
+	db: Db,
+	input: { userId: number; subscriptionId: number; enabled: boolean; now: number },
+): Promise<boolean> {
+	const result = await db.run(
+		`UPDATE subscriptions
+     SET enabled = ?, updated_at = ?
+     WHERE id = ? AND user_id = ?`,
+		input.enabled ? 1 : 0,
+		input.now,
+		input.subscriptionId,
+		input.userId,
+	);
+	return (result.meta.changes ?? 0) > 0;
+}
+
 export async function listActiveChannelsForSource(
 	db: Db,
 	sourceId: string,
