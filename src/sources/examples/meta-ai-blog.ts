@@ -119,6 +119,13 @@ createSource(
 			'user-agent': USER_AGENT,
 			accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
 			'accept-language': 'en-US,en;q=0.9',
+			// Meta's CDN rejects a Chrome UA that lacks the Sec-Fetch-* headers a
+			// real browser sends on navigation — without these it returns 400.
+			'sec-fetch-dest': 'document',
+			'sec-fetch-mode': 'navigate',
+			'sec-fetch-site': 'none',
+			'sec-fetch-user': '?1',
+			'upgrade-insecure-requests': '1',
 		},
 		parse: (html) => parseMetaBlogHtml(html),
 	}),
