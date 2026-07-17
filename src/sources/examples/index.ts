@@ -16,3 +16,4 @@ import './deepseek-updates';
 import './seed-news';
 import './xai-news';
 import './meta-ai-blog';
+import './artificial-analysis-changelog';

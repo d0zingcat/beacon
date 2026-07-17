@@ -39,7 +39,7 @@ curl -X POST "https://beacon.d0zingcat.workers.dev/sources/cursor-changelog/run"
 
 ## 支持的数据源
 
-Beacon 内置 **19 个数据源**。部署后请执行 D1 迁移，以注册 RSS 订阅类源。
+Beacon 内置 **23 个数据源**。部署后请执行 D1 迁移，以注册 RSS 订阅类源。
 
 | ID | 模式 | 抽取器 | 监控内容 |
 |----|------|--------|----------|
@@ -61,11 +61,15 @@ Beacon 内置 **19 个数据源**。部署后请执行 D1 迁移，以注册 RSS
 | `qwen-blog` | append | webpage | [Qwen 研究博客](https://qwen.ai/research)（阿里通义千问，page-config JSON API） |
 | `gemini-blog` | append | webpage | [Gemini 博客](https://deepmind.google/blog/)（Google DeepMind，服务端渲染卡片） |
 | `xai-news` | append | webpage | [xAI News](https://x.ai/blog)（服务端渲染 Next.js 卡片） |
+| `deepseek-news` | append | webpage | [DeepSeek News](https://api-docs.deepseek.com/zh-cn/news) |
+| `deepseek-updates` | append | webpage | [DeepSeek Updates](https://api-docs.deepseek.com/zh-cn/updates) |
+| `seed-news` | append | webpage | [ByteDance Seed](https://seed.bytedance.com/) |
+| `artificial-analysis-changelog` | append | webpage | [Artificial Analysis Changelog](https://artificialanalysis.ai/changelog)（服务端渲染时间线） |
 | `dmit-stock` | state | webpage | [DMIT VPS 库存](https://stock.qixi.me/) 聚合页（可用性变化时通知） |
 
 | 分类 | 数据源 |
 |------|--------|
-| Changelog 与博客 | `cursor-changelog`、`cursor-blog`、`kiro-changelog`、`openrouter-blog`、`openai-blog`、`lilianweng-blog`、`anthropic-blog`、`meta-ai-blog`、`hy-news`、`mimo-news`、`bigmodel-news`、`minimax-news`、`kimi-blog`、`longcat-research`、`qwen-blog`、`gemini-blog`、`xai-news` |
+| Changelog 与博客 | `cursor-changelog`、`cursor-blog`、`kiro-changelog`、`openrouter-blog`、`openai-blog`、`lilianweng-blog`、`anthropic-blog`、`meta-ai-blog`、`hy-news`、`mimo-news`、`bigmodel-news`、`minimax-news`、`kimi-blog`、`longcat-research`、`qwen-blog`、`gemini-blog`、`xai-news`、`deepseek-news`、`deepseek-updates`、`seed-news`、`artificial-analysis-changelog` |
 | 模型目录 | `bedrock-models` |
 | 基础设施 | `dmit-stock` |
 

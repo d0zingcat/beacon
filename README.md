@@ -39,7 +39,7 @@ curl -X POST "https://beacon.d0zingcat.workers.dev/sources/cursor-changelog/run"
 
 ## Supported sources
 
-Beacon ships with **19 built-in sources**. Apply D1 migrations after deploy so RSS feed sources are registered.
+Beacon ships with **23 built-in sources**. Apply D1 migrations after deploy so RSS feed sources are registered.
 
 | ID | Mode | Extractor | Tracks |
 |----|------|-----------|--------|
@@ -61,11 +61,15 @@ Beacon ships with **19 built-in sources**. Apply D1 migrations after deploy so R
 | `qwen-blog` | append | webpage | [Qwen Blog](https://qwen.ai/research) (Alibaba, page-config JSON API) |
 | `gemini-blog` | append | webpage | [Gemini Blog](https://deepmind.google/blog/) (Google DeepMind, server-rendered cards) |
 | `xai-news` | append | webpage | [xAI News](https://x.ai/blog) (server-rendered Next.js cards) |
+| `deepseek-news` | append | webpage | [DeepSeek News](https://api-docs.deepseek.com/zh-cn/news) |
+| `deepseek-updates` | append | webpage | [DeepSeek Updates](https://api-docs.deepseek.com/zh-cn/updates) |
+| `seed-news` | append | webpage | [ByteDance Seed](https://seed.bytedance.com/) |
+| `artificial-analysis-changelog` | append | webpage | [Artificial Analysis Changelog](https://artificialanalysis.ai/changelog) (server-rendered timeline) |
 | `dmit-stock` | state | webpage | [DMIT VPS stock](https://stock.qixi.me/) aggregator (notify on availability change) |
 
 | Category | Sources |
 |----------|---------|
-| Changelogs & blogs | `cursor-changelog`, `cursor-blog`, `kiro-changelog`, `openrouter-blog`, `openai-blog`, `lilianweng-blog`, `anthropic-blog`, `meta-ai-blog`, `hy-news`, `mimo-news`, `bigmodel-news`, `minimax-news`, `kimi-blog`, `longcat-research`, `qwen-blog`, `gemini-blog`, `xai-news` |
+| Changelogs & blogs | `cursor-changelog`, `cursor-blog`, `kiro-changelog`, `openrouter-blog`, `openai-blog`, `lilianweng-blog`, `anthropic-blog`, `meta-ai-blog`, `hy-news`, `mimo-news`, `bigmodel-news`, `minimax-news`, `kimi-blog`, `longcat-research`, `qwen-blog`, `gemini-blog`, `xai-news`, `deepseek-news`, `deepseek-updates`, `seed-news`, `artificial-analysis-changelog` |
 | Model catalogs | `bedrock-models` |
 | Infrastructure | `dmit-stock` |
 
