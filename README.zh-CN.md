@@ -39,7 +39,7 @@ curl -X POST "https://beacon.d0zingcat.workers.dev/sources/cursor-changelog/run"
 
 ## 支持的数据源
 
-Beacon 内置 **23 个数据源**。部署后请执行 D1 迁移，以注册 RSS 订阅类源。
+Beacon 内置 **24 个数据源**。部署后请执行 D1 迁移，以注册 RSS 订阅类源。
 
 | ID | 模式 | 抽取器 | 监控内容 |
 |----|------|--------|----------|
@@ -52,6 +52,7 @@ Beacon 内置 **23 个数据源**。部署后请执行 D1 迁移，以注册 RSS
 | `anthropic-blog` | append | webpage | [Anthropic News](https://www.anthropic.com/news) |
 | `meta-ai-blog` | append | webpage | [Meta AI Blog](https://ai.meta.com/blog/)（服务端渲染卡片） |
 | `bedrock-models` | append | webpage | [AWS Bedrock 模型列表](https://docs.aws.amazon.com/bedrock/latest/userguide/model-cards.md) |
+| `bedrock-docs` | append | feed | [AWS Bedrock User Guide 更新](https://docs.aws.amazon.com/bedrock/latest/userguide/) RSS |
 | `hy-news` | append | webpage | [腾讯混元新闻](https://hy.tencent.com/)（JSON API） |
 | `mimo-news` | append | webpage | [小米 MiMo 新闻](https://mimo.xiaomi.com/)（Rspress bundles） |
 | `bigmodel-news` | append | webpage | [智谱开放平台更新](https://docs.bigmodel.cn/cn/update/new-releases)（Mintlify markdown） |
@@ -69,7 +70,7 @@ Beacon 内置 **23 个数据源**。部署后请执行 D1 迁移，以注册 RSS
 
 | 分类 | 数据源 |
 |------|--------|
-| Changelog 与博客 | `cursor-changelog`、`cursor-blog`、`kiro-changelog`、`openrouter-blog`、`openai-blog`、`lilianweng-blog`、`anthropic-blog`、`meta-ai-blog`、`hy-news`、`mimo-news`、`bigmodel-news`、`minimax-news`、`kimi-blog`、`longcat-research`、`qwen-blog`、`gemini-blog`、`xai-news`、`deepseek-news`、`deepseek-updates`、`seed-news`、`artificial-analysis-changelog` |
+| Changelog 与博客 | `cursor-changelog`、`cursor-blog`、`kiro-changelog`、`openrouter-blog`、`openai-blog`、`lilianweng-blog`、`anthropic-blog`、`meta-ai-blog`、`bedrock-docs`、`hy-news`、`mimo-news`、`bigmodel-news`、`minimax-news`、`kimi-blog`、`longcat-research`、`qwen-blog`、`gemini-blog`、`xai-news`、`deepseek-news`、`deepseek-updates`、`seed-news`、`artificial-analysis-changelog` |
 | 模型目录 | `bedrock-models` |
 | 基础设施 | `dmit-stock` |
 
