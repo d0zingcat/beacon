@@ -57,6 +57,20 @@ const OPENROUTER_RSS = `<?xml version="1.0" encoding="UTF-8"?>
   </channel>
 </rss>`;
 
+const BEDROCK_UG_RSS = `<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+  <channel>
+    <title>User Guide Updates</title>
+    <item>
+      <title>New model</title>
+      <link>https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-claude.html</link>
+      <description>Amazon Bedrock now supports Anthropic Claude Opus 4.5. See &lt;a href="https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-claude.html"&gt;Claude model parameters&lt;/a&gt;.</description>
+      <pubDate>Mon, 24 Nov 2025 19:00:00 GMT</pubDate>
+      <guid isPermaLink="false">https://docs.aws.amazon.com/bedrock/latest/userguide/#New_model_2025-11-24</guid>
+    </item>
+  </channel>
+</rss>`;
+
 describe('feed RSS regression fixtures', () => {
 	it('parses kiro changelog feed items', () => {
 		expect(parseRssFeed(KIRO_RSS)).toEqual([
@@ -105,6 +119,20 @@ describe('feed RSS regression fixtures', () => {
 				summary:
 					"Connect your coding agent to OpenRouter&apos;s live model catalog, benchmarks, docs, and test inference, all without leaving your editor.",
 				publishedAt: new Date('Thu, 25 Jun 2026 00:00:00 GMT').toISOString(),
+			},
+		]);
+	});
+
+	it('parses bedrock user guide feed items', () => {
+		expect(parseRssFeed(BEDROCK_UG_RSS)).toEqual([
+			{
+				externalId:
+					'https://docs.aws.amazon.com/bedrock/latest/userguide/#New_model_2025-11-24',
+				url: 'https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-claude.html',
+				title: 'New model',
+				summary:
+					'Amazon Bedrock now supports Anthropic Claude Opus 4.5. See <a href="https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-claude.html">Claude model parameters</a>.',
+				publishedAt: new Date('Mon, 24 Nov 2025 19:00:00 GMT').toISOString(),
 			},
 		]);
 	});
