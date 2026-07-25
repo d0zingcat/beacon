@@ -12,6 +12,15 @@ function toBatchItem(event: AppendEvent): AppendNotificationItem {
 	};
 }
 
+/** Prefer the latest append event when the same itemId appears more than once in a run. */
+export function dedupeAppendEventsByItemId(events: AppendEvent[]): AppendEvent[] {
+	const byItemId = new Map<number, AppendEvent>();
+	for (const event of events) {
+		byItemId.set(event.itemId, event);
+	}
+	return [...byItemId.values()];
+}
+
 export function consolidateAppendNotifications(
 	events: NotificationEvent[],
 	batchMaxItems: number = DEFAULT_BATCH_NOTIFY_MAX_ITEMS,
@@ -27,17 +36,23 @@ export function consolidateAppendNotifications(
 		}
 	}
 
-	if (appendEvents.length <= 1) {
-		return events;
+	const uniqueAppendEvents = dedupeAppendEventsByItemId(appendEvents);
+	const deduped = uniqueAppendEvents.length !== appendEvents.length;
+
+	if (uniqueAppendEvents.length <= 1) {
+		if (!deduped) {
+			return events;
+		}
+		return [...uniqueAppendEvents, ...otherEvents];
 	}
 
 	const batch: NotificationEvent = {
 		kind: 'append_batch',
-		sourceId: appendEvents[0].sourceId,
-		sourceName: appendEvents[0].sourceName,
-		sourceKind: appendEvents[0].sourceKind,
+		sourceId: uniqueAppendEvents[0].sourceId,
+		sourceName: uniqueAppendEvents[0].sourceName,
+		sourceKind: uniqueAppendEvents[0].sourceKind,
 		maxItems: batchMaxItems,
-		items: appendEvents.map(toBatchItem),
+		items: uniqueAppendEvents.map(toBatchItem),
 	};
 
 	return [batch, ...otherEvents];

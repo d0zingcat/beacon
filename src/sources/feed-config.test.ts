@@ -46,6 +46,33 @@ describe('feed-config', () => {
 		).toBeNull();
 	});
 
+it('parses externalIdMode from feed config', () => {
+		expect(
+			parseFeedSourceConfig(
+				JSON.stringify({
+					feedUrl: 'https://docs.aws.amazon.com/bedrock/latest/userguide/bedrock-ug.rss',
+					externalIdMode: 'stable',
+					batchNotifyMaxItems: 10,
+				}),
+			),
+		).toEqual({
+			feedUrl: 'https://docs.aws.amazon.com/bedrock/latest/userguide/bedrock-ug.rss',
+			batchNotifyMaxItems: 10,
+			externalIdMode: 'stable',
+		});
+	});
+
+	it('rejects invalid externalIdMode', () => {
+		expect(
+			parseFeedSourceConfig(
+				JSON.stringify({
+					feedUrl: 'https://openai.com/news/rss.xml',
+					externalIdMode: 'hash',
+				}),
+			),
+		).toBeNull();
+	});
+
 	it('rejects non-https feed urls', () => {
 		expect(parseFeedSourceConfig(JSON.stringify({ feedUrl: 'http://example.com/feed.xml' }))).toBeNull();
 	});

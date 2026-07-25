@@ -185,6 +185,14 @@ export async function getSourceLastStatus(
 	return row?.last_status ?? null;
 }
 
+export async function countItemsForSource(db: Db, sourceId: string): Promise<number> {
+	const row = await db.first<{ count: number }>(
+		`SELECT COUNT(*) AS count FROM items WHERE source_id = ?`,
+		sourceId,
+	);
+	return row?.count ?? 0;
+}
+
 export async function hasItemByHash(db: Db, sourceId: string, hash: string): Promise<boolean> {
 	const row = await db.first<{ id: number }>(
 		`SELECT id FROM items WHERE source_id = ? AND hash = ? LIMIT 1`,

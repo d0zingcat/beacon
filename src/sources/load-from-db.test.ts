@@ -64,6 +64,20 @@ describe('load-from-db', () => {
 		});
 	});
 
+	it('creates extractor that applies stable externalIdMode', async () => {
+		const collidingRss = `<?xml version="1.0"?><rss version="2.0"><channel>
+<item><title>New feature</title><link>https://example.com/a</link><guid>same</guid><description>A</description></item>
+<item><title>New feature</title><link>https://example.com/b</link><guid>same</guid><description>B</description></item>
+</channel></rss>`;
+		const fetch = vi.fn().mockResolvedValue(new Response(collidingRss, { status: 200 }));
+		const extractor = createFeedExtractorFromConfig({
+			feedUrl: 'https://example.com/feed.xml',
+			externalIdMode: 'stable',
+		});
+		const items = await extractor.extract({ env: {} as Env, fetch });
+		expect(new Set(items.map((item) => item.externalId)).size).toBe(2);
+	});
+
 	it('skips invalid feed rows', async () => {
 		vi.mocked(listFeedSourceRows).mockResolvedValue([
 			{ ...OPENAI_ROW, config_json: '{"feedUrl":"not-a-url"}' },

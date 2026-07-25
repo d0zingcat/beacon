@@ -14,6 +14,26 @@ const SAMPLE_RSS = `<?xml version="1.0" encoding="UTF-8"?>
   </channel>
 </rss>`;
 
+const COLLIDING_GUID_RSS = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <item>
+      <title>New feature</title>
+      <link>https://docs.aws.amazon.com/bedrock/latest/userguide/a.html</link>
+      <guid isPermaLink="false">https://docs.aws.amazon.com/bedrock/latest/userguide/#New_feature_2025-12-03</guid>
+      <description>Feature A description</description>
+      <pubDate>Wed, 03 Dec 2025 19:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>New feature</title>
+      <link>https://docs.aws.amazon.com/bedrock/latest/userguide/b.html</link>
+      <guid isPermaLink="false">https://docs.aws.amazon.com/bedrock/latest/userguide/#New_feature_2025-12-03</guid>
+      <description>Feature B description</description>
+      <pubDate>Wed, 03 Dec 2025 19:00:00 GMT</pubDate>
+    </item>
+  </channel>
+</rss>`;
+
 describe('parseRssFeed', () => {
 	it('parses rss items', () => {
 		expect(parseRssFeed(SAMPLE_RSS)).toEqual([
@@ -25,6 +45,33 @@ describe('parseRssFeed', () => {
 				publishedAt: undefined,
 			},
 		]);
+	});
+
+	it('uses guid as externalId by default even when guids collide', () => {
+		const items = parseRssFeed(COLLIDING_GUID_RSS);
+		expect(items.map((item) => item.externalId)).toEqual([
+			'https://docs.aws.amazon.com/bedrock/latest/userguide/#New_feature_2025-12-03',
+			'https://docs.aws.amazon.com/bedrock/latest/userguide/#New_feature_2025-12-03',
+		]);
+	});
+
+	it('builds stable externalIds from guid, link, title, and summary', () => {
+		const items = parseRssFeed(COLLIDING_GUID_RSS, { externalIdMode: 'stable' });
+		expect(items.map((item) => item.externalId)).toEqual([
+			[
+				'https://docs.aws.amazon.com/bedrock/latest/userguide/#New_feature_2025-12-03',
+				'https://docs.aws.amazon.com/bedrock/latest/userguide/a.html',
+				'New feature',
+				'Feature A description',
+			].join('\n'),
+			[
+				'https://docs.aws.amazon.com/bedrock/latest/userguide/#New_feature_2025-12-03',
+				'https://docs.aws.amazon.com/bedrock/latest/userguide/b.html',
+				'New feature',
+				'Feature B description',
+			].join('\n'),
+		]);
+		expect(new Set(items.map((item) => item.externalId)).size).toBe(2);
 	});
 });
 
