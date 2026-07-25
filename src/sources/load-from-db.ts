@@ -17,6 +17,7 @@ export function createFeedExtractorFromConfig(config: FeedSourceConfig) {
 			...DEFAULT_FEED_HEADERS,
 			...config.headers,
 		},
+		externalIdMode: config.externalIdMode,
 	});
 }
 

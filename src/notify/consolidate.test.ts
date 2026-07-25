@@ -31,6 +31,25 @@ describe('consolidateAppendNotifications', () => {
 		]);
 	});
 
+	it('keeps the last append event when the same itemId appears twice', () => {
+		const result = consolidateAppendNotifications(
+			[append(1, 'First'), append(1, 'Second'), append(2, 'Other')],
+			10,
+		);
+		expect(result).toEqual([
+			{
+				kind: 'append_batch',
+				sourceId: 'openai-blog',
+				sourceName: 'OpenAI Blog',
+				maxItems: 10,
+				items: [
+					{ itemId: 1, title: 'Second' },
+					{ itemId: 2, title: 'Other' },
+				],
+			},
+		]);
+	});
+
 	it('keeps non-append events after the batch', () => {
 		const result = consolidateAppendNotifications(
 			[

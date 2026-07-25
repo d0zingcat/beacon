@@ -3,6 +3,7 @@ import type { NotificationEvent } from '../notify/types';
 import { getSource } from '../sources/registry';
 import { createDb } from '../db/client';
 import {
+	countItemsForSource,
 	finishRunLog,
 	getSourceLastStatus,
 	startRunLog,
@@ -10,6 +11,7 @@ import {
 	upsertSource,
 } from '../db/repo';
 import { processAppendItem } from './append';
+import { shouldSilenceAppendSeed } from './seed';
 import { processStateItem, toStateChangeEvent } from './state';
 import { consolidateAppendNotifications } from '../notify/consolidate';
 import { DEFAULT_BATCH_NOTIFY_MAX_ITEMS } from '../config';
@@ -87,6 +89,8 @@ export async function runSource(
 		itemsTotal = rawItems.length;
 
 		if (source.mode === 'append') {
+			const priorItemCount = await countItemsForSource(db, source.id);
+			const silenceSeed = !forceNotify && shouldSilenceAppendSeed(priorItemCount);
 			for (const raw of rawItems) {
 				const { event, inserted } = await processAppendItem(db, source, raw, now, {
 					forceNotify,
@@ -94,7 +98,7 @@ export async function runSource(
 				if (inserted) {
 					itemsNew += 1;
 				}
-				if (event) {
+				if (event && !silenceSeed) {
 					notifyEvents.push(event);
 				}
 			}

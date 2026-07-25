@@ -123,11 +123,15 @@ describe('feed RSS regression fixtures', () => {
 		]);
 	});
 
-	it('parses bedrock user guide feed items', () => {
-		expect(parseRssFeed(BEDROCK_UG_RSS)).toEqual([
+	it('parses bedrock user guide feed items with stable externalIds', () => {
+		expect(parseRssFeed(BEDROCK_UG_RSS, { externalIdMode: 'stable' })).toEqual([
 			{
-				externalId:
+				externalId: [
 					'https://docs.aws.amazon.com/bedrock/latest/userguide/#New_model_2025-11-24',
+					'https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-claude.html',
+					'New model',
+					'Amazon Bedrock now supports Anthropic Claude Opus 4.5. See <a href="https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-claude.html">Claude model parameters</a>.',
+				].join('\n'),
 				url: 'https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-claude.html',
 				title: 'New model',
 				summary:

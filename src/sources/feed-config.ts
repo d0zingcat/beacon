@@ -1,4 +1,5 @@
 import { DEFAULT_BATCH_NOTIFY_MAX_ITEMS } from '../config';
+import type { FeedExternalIdMode } from '../extract/feed';
 
 export const DEFAULT_FEED_HEADERS: Record<string, string> = {
 	'user-agent': 'beacon/1.0 (+https://github.com/d0zingcat/beacon)',
@@ -11,6 +12,11 @@ export interface FeedSourceConfig {
 	format?: 'rss2';
 	/** Max items listed in a merged batch notification; falls back to DEFAULT_BATCH_NOTIFY_MAX_ITEMS */
 	batchNotifyMaxItems?: number;
+	/**
+	 * How to derive item externalId from RSS fields.
+	 * Use `stable` when the feed reuses guids across distinct entries (e.g. AWS Bedrock UG).
+	 */
+	externalIdMode?: FeedExternalIdMode;
 }
 
 export interface FeedSourceInput {
@@ -58,12 +64,16 @@ export function validateFeedSourceConfig(value: unknown): FeedSourceConfig | nul
 			return null;
 		}
 	}
+	if (record.externalIdMode !== undefined && record.externalIdMode !== 'guid' && record.externalIdMode !== 'stable') {
+		return null;
+	}
 	return {
 		feedUrl: record.feedUrl,
 		headers: record.headers as Record<string, string> | undefined,
 		format: record.format as 'rss2' | undefined,
 		batchNotifyMaxItems:
 			(record.batchNotifyMaxItems as number | undefined) ?? DEFAULT_BATCH_NOTIFY_MAX_ITEMS,
+		externalIdMode: record.externalIdMode as FeedExternalIdMode | undefined,
 	};
 }
 

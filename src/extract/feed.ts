@@ -1,14 +1,23 @@
 import type { RawItem } from '../sources/types';
 import type { Extractor } from './types';
 
+export type FeedExternalIdMode = 'guid' | 'stable';
+
+export interface ParseRssFeedOptions {
+	/** `guid` (default) uses RSS guid; `stable` includes link/title/summary to avoid colliding guids. */
+	externalIdMode?: FeedExternalIdMode;
+}
+
 export interface FeedExtractorConfig {
 	feedUrl: string;
 	headers?: Record<string, string>;
 	parse?: (xml: string) => RawItem[];
+	externalIdMode?: FeedExternalIdMode;
 }
 
 export function createFeedExtractor(config: FeedExtractorConfig): Extractor {
-	const parse = config.parse ?? parseRssFeed;
+	const parse =
+		config.parse ?? ((xml: string) => parseRssFeed(xml, { externalIdMode: config.externalIdMode }));
 	return {
 		kind: 'feed',
 		async extract(ctx) {
@@ -23,7 +32,23 @@ export function createFeedExtractor(config: FeedExtractorConfig): Extractor {
 	};
 }
 
-export function parseRssFeed(xml: string): RawItem[] {
+export function buildRssExternalId(
+	input: {
+		guid: string;
+		link?: string;
+		title: string;
+		summary?: string;
+	},
+	mode: FeedExternalIdMode = 'guid',
+): string {
+	if (mode === 'guid') {
+		return input.guid;
+	}
+	return [input.guid, input.link ?? '', input.title, input.summary ?? ''].join('\n');
+}
+
+export function parseRssFeed(xml: string, options: ParseRssFeedOptions = {}): RawItem[] {
+	const mode = options.externalIdMode ?? 'guid';
 	const items: RawItem[] = [];
 	const itemBlocks = xml.match(/<item[\s\S]*?<\/item>/gi) ?? [];
 	for (const block of itemBlocks) {
@@ -34,7 +59,10 @@ export function parseRssFeed(xml: string): RawItem[] {
 		const pubDate = extractTag(block, 'pubDate');
 		if (!title || !guid) continue;
 		items.push({
-			externalId: guid,
+			externalId: buildRssExternalId(
+				{ guid, link, title, summary: description },
+				mode,
+			),
 			url: link ?? '',
 			title,
 			summary: description,
