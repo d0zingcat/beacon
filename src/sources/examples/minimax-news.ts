@@ -308,12 +308,41 @@ export async function fetchMinimaxDocsPage(
 }
 
 export async function fetchMinimaxNewsList(fetchFn: typeof fetch): Promise<RawItem[]> {
-	const [newsItems, ...docsPages] = await Promise.all([
-		fetchMinimaxNewsApiList(fetchFn),
-		...MINIMAX_DOCS_PAGES.map((page) => fetchMinimaxDocsPage(page, fetchFn)),
-	]);
+	const sources = [
+		{ label: 'news API', fetch: () => fetchMinimaxNewsApiList(fetchFn) },
+		...MINIMAX_DOCS_PAGES.map((page) => ({
+			label: `docs page (${page.path})`,
+			fetch: () => fetchMinimaxDocsPage(page, fetchFn),
+		})),
+	];
+	const results = await Promise.allSettled(sources.map((source) => source.fetch()));
+	const items: RawItem[] = [];
+	const errors: string[] = [];
 
-	return [...newsItems, ...docsPages.flat()];
+	for (let index = 0; index < results.length; index++) {
+		const result = results[index];
+		const source = sources[index];
+		if (!result || !source) continue;
+
+		if (result.status === 'fulfilled') {
+			items.push(...result.value);
+			continue;
+		}
+
+		const message =
+			result.reason instanceof Error ? result.reason.message : String(result.reason);
+		errors.push(message);
+		console.warn(`MiniMax ${source.label} skipped: ${message}`);
+	}
+
+	// MiniMax occasionally returns a transient CDN 522. Keep the source healthy
+	// when another independent feed is available, so a brief outage does not
+	// suppress all MiniMax updates or emit a crawl-failure notification.
+	if (items.length === 0 && errors.length === sources.length) {
+		throw new Error(errors.join('; '));
+	}
+
+	return items;
 }
 
 createSource(
