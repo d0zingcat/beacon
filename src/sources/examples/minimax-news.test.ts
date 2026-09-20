@@ -1,8 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
 	buildMinimaxDocsExternalId,
 	buildMinimaxDocsUrl,
 	buildMinimaxNewsUrl,
+	fetchMinimaxNewsList,
 	normalizeMinimaxHref,
 	parseMinimaxApisMarkdown,
 	parseMinimaxChineseDate,
@@ -101,6 +102,40 @@ describe('parseMinimaxNewsApiList', () => {
 				publishedAt: '2026-04-11T16:00:00.000Z',
 			},
 		]);
+	});
+});
+
+describe('fetchMinimaxNewsList', () => {
+	it('keeps successful feeds when the news API is temporarily unavailable', async () => {
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+		const fetchFn = vi.fn(async (url: string) => {
+			if (url.includes('/api/news')) {
+				return new Response('upstream timeout', { status: 522 });
+			}
+			if (url.endsWith('/models.md')) {
+				return new Response(SAMPLE_MODELS, { status: 200 });
+			}
+			return new Response(SAMPLE_APIS, { status: 200 });
+		});
+
+		const items = await fetchMinimaxNewsList(fetchFn);
+
+		expect(items).toHaveLength(4);
+		expect(items.map((item) => item.externalId)).toContain('models:2026 年 6 月 1 日:MiniMax M3');
+		expect(warn).toHaveBeenCalledWith(
+			expect.stringContaining('MiniMax news API skipped: MiniMax news fetch failed: 522'),
+		);
+		warn.mockRestore();
+	});
+
+	it('throws when every MiniMax feed fails', async () => {
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+		const fetchFn = vi.fn(async () => new Response('unavailable', { status: 522 }));
+
+		await expect(fetchMinimaxNewsList(fetchFn)).rejects.toThrow(
+			'MiniMax news fetch failed: 522 ',
+		);
+		warn.mockRestore();
 	});
 });
 

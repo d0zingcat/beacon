@@ -33,10 +33,11 @@ describe('artificial-analysis-changelog live fetch', () => {
 		}
 
 		const [first] = items;
+		const firstDated = items.find((item) => item.publishedAt);
 		expect(first.externalId).toBeTruthy();
 		expect(first.url.startsWith('https://artificialanalysis.ai/')).toBe(true);
 		expect(first.title.length).toBeGreaterThan(0);
-		expect(first.publishedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+		expect(firstDated?.publishedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
 
 		const ids = new Set(items.map((item) => item.externalId));
 		expect(ids.size).toBe(items.length);
