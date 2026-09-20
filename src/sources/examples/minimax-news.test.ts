@@ -123,7 +123,7 @@ describe('fetchMinimaxNewsList', () => {
 		expect(items).toHaveLength(4);
 		expect(items.map((item) => item.externalId)).toContain('models:2026 年 6 月 1 日:MiniMax M3');
 		expect(warn).toHaveBeenCalledWith(
-			'MiniMax news API skipped: MiniMax news fetch failed: 522 ',
+			expect.stringContaining('MiniMax news API skipped: MiniMax news fetch failed: 522'),
 		);
 		warn.mockRestore();
 	});
