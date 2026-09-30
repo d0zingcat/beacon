@@ -3,12 +3,37 @@ import type { NotificationEvent } from '../notify/types';
 import type { Db } from '../db/client';
 import { getItemByExternalId, getItemByHash, insertItem, updateAppendItem } from '../db/repo';
 import { hashAppendItem } from './dedupe';
+import { DEFAULT_APPEND_NOTIFY_MAX_AGE_DAYS } from '../config';
 import type { Source } from '../sources/types';
 
 export interface AppendProcessResult {
 	event: NotificationEvent | null;
 	inserted: boolean;
 	updated: boolean;
+}
+
+export interface AppendProcessOptions {
+	forceNotify?: boolean;
+	/** Skip notifications for items published more than this many days before `now`. */
+	notifyMaxAgeDays?: number;
+}
+
+const DAY_MS = 86_400_000;
+
+/**
+ * True when the item has a parseable publish timestamp older than the window.
+ * Items without `publishedAt` (or with unparseable/future dates) are not
+ * considered stale so sources that omit dates keep notifying.
+ */
+export function isStalePublication(
+	publishedAt: string | undefined,
+	now: number,
+	maxAgeDays: number,
+): boolean {
+	if (!publishedAt) return false;
+	const ts = Date.parse(publishedAt);
+	if (Number.isNaN(ts)) return false;
+	return now - ts > maxAgeDays * DAY_MS;
 }
 
 function normalizeItem(source: Source, raw: RawItem) {
@@ -34,9 +59,20 @@ export async function processAppendItem(
 	source: Source,
 	raw: RawItem,
 	now: number,
-	options: { forceNotify?: boolean } = {},
+	options: AppendProcessOptions = {},
 ): Promise<AppendProcessResult> {
 	const normalized = normalizeItem(source, raw);
+	// Upstream changelog re-keys (slug/text edits) can resurface year-old
+	// entries as brand-new inserts; store them but suppress the alert.
+	const stale =
+		!options.forceNotify &&
+		isStalePublication(
+			normalized.publishedAt,
+			now,
+			options.notifyMaxAgeDays ?? DEFAULT_APPEND_NOTIFY_MAX_AGE_DAYS,
+		);
+	const eventFor = (itemId: number): NotificationEvent | null =>
+		stale ? null : toAppendEvent(source, itemId, normalized);
 	const hash = await hashAppendItem({
 		sourceId: source.id,
 		externalId: normalized.externalId,
@@ -73,7 +109,7 @@ export async function processAppendItem(
 	if (byExternalId) {
 		await updateAppendItem(db, { itemId: byExternalId.id, ...itemInput });
 		return {
-			event: toAppendEvent(source, byExternalId.id, normalized),
+			event: eventFor(byExternalId.id),
 			inserted: false,
 			updated: true,
 		};
@@ -86,7 +122,7 @@ export async function processAppendItem(
 	});
 
 	return {
-		event: toAppendEvent(source, itemId, normalized),
+		event: eventFor(itemId),
 		inserted: true,
 		updated: false,
 	};

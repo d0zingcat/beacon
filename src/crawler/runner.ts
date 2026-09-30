@@ -94,6 +94,7 @@ export async function runSource(
 			for (const raw of rawItems) {
 				const { event, inserted } = await processAppendItem(db, source, raw, now, {
 					forceNotify,
+					notifyMaxAgeDays: source.notifyMaxAgeDays,
 				});
 				if (inserted) {
 					itemsNew += 1;
