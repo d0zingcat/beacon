@@ -30,6 +30,8 @@ export interface Source {
 	diff?(prev: Record<string, unknown>, next: Record<string, unknown>): boolean;
 	/** Max items listed in a merged batch notification (append mode). */
 	batchNotifyMaxItems?: number;
+	/** Suppress append notifications for items older than this many days (append mode). */
+	notifyMaxAgeDays?: number;
 }
 
 export type { BrowserWorker, Page };
