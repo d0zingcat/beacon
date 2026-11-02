@@ -57,6 +57,27 @@ const OPENROUTER_RSS = `<?xml version="1.0" encoding="UTF-8"?>
   </channel>
 </rss>`;
 
+const OPENAI_COLLIDING_GUID_RSS = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title><![CDATA[OpenAI News]]></title>
+    <item>
+      <title><![CDATA[Retell uses OpenAI models to help power 100M monthly calls]]></title>
+      <description><![CDATA[GPT-6 Astra tops Retell’s voice agent benchmark, while Codex helps it reach a $1.6M annual revenue run rate per employee.]]></description>
+      <link>https://openai.com/index/retell-ai</link>
+      <guid isPermaLink="true">https://openai.com/index/retell-ai</guid>
+      <pubDate>Tue, 27 Oct 2026 15:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title><![CDATA[Customizable, no-code voice agent automation with GPT-4o]]></title>
+      <description><![CDATA[Retell AI is transforming the call center with AI voice automation powered by GPT-4o and GPT-4.1. Its no-code platform enables businesses to launch natural, real-time voice agents that cut call costs, boost CSAT, and automate customer conversations—without scripts or hold times.]]></description>
+      <link>https://openai.com/index/retell-ai</link>
+      <guid isPermaLink="true">https://openai.com/index/retell-ai</guid>
+      <pubDate>Thu, 26 Jun 2025 10:00:00 GMT</pubDate>
+    </item>
+  </channel>
+</rss>`;
+
 const BEDROCK_UG_RSS = `<?xml version="1.0" encoding="UTF-8"?>
 <rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
   <channel>
@@ -139,5 +160,14 @@ describe('feed RSS regression fixtures', () => {
 				publishedAt: new Date('Mon, 24 Nov 2025 19:00:00 GMT').toISOString(),
 			},
 		]);
+	});
+
+	it('parses openai blog feed items with stable externalIds when guids collide', () => {
+		const items = parseRssFeed(OPENAI_COLLIDING_GUID_RSS, { externalIdMode: 'stable' });
+		expect(items).toHaveLength(2);
+		expect(items[0].externalId).not.toEqual(items[1].externalId);
+		expect(items[0].url).toEqual(items[1].url);
+		expect(items[0].externalId).toContain('Retell uses OpenAI models');
+		expect(items[1].externalId).toContain('Customizable, no-code voice agent automation');
 	});
 });
