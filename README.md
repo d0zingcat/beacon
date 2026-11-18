@@ -39,7 +39,7 @@ curl -X POST "https://beacon.d0zingcat.workers.dev/sources/cursor-changelog/run"
 
 ## Supported sources
 
-Beacon ships with **24 built-in sources**. Apply D1 migrations after deploy so RSS feed sources are registered.
+Beacon ships with **26 built-in sources**. Apply D1 migrations after deploy so RSS feed sources are registered.
 
 | ID | Mode | Extractor | Tracks |
 |----|------|-----------|--------|
@@ -59,8 +59,10 @@ Beacon ships with **24 built-in sources**. Apply D1 migrations after deploy so R
 | `minimax-news` | append | webpage | [MiniMax News](https://www.minimaxi.com/news) (JSON API + docs release notes) |
 | `kimi-blog` | append | webpage | [Kimi Research Blog](https://www.kimi.com/blog/) (Moonshot AI) |
 | `longcat-research` | append | webpage | [LongCat Research](https://longcat.ai/) (Meituan, SPA bundle) |
+| `longcat-changelog` | append | webpage | [LongCat Changelog](https://longcat.chat/platform/docs/zh/change-log) (Meituan API Docs, VitePress SSR) |
 | `qwen-blog` | append | webpage | [Qwen Blog](https://qwen.ai/research) (Alibaba, page-config JSON API) |
 | `gemini-blog` | append | webpage | [Gemini Blog](https://deepmind.google/blog/) (Google DeepMind, server-rendered cards) |
+| `microsoft-ai-news` | append | webpage | [Microsoft AI News](https://microsoft.ai/news) (server-rendered WordPress cards) |
 | `xai-news` | append | webpage | [xAI News](https://x.ai/blog) (server-rendered Next.js cards) |
 | `deepseek-news` | append | webpage | [DeepSeek News](https://api-docs.deepseek.com/zh-cn/news) |
 | `deepseek-updates` | append | webpage | [DeepSeek Updates](https://api-docs.deepseek.com/zh-cn/updates) |
@@ -70,7 +72,7 @@ Beacon ships with **24 built-in sources**. Apply D1 migrations after deploy so R
 
 | Category | Sources |
 |----------|---------|
-| Changelogs & blogs | `cursor-changelog`, `cursor-blog`, `kiro-changelog`, `openrouter-blog`, `openai-blog`, `lilianweng-blog`, `anthropic-blog`, `meta-ai-blog`, `bedrock-docs`, `hy-news`, `mimo-news`, `bigmodel-news`, `minimax-news`, `kimi-blog`, `longcat-research`, `qwen-blog`, `gemini-blog`, `xai-news`, `deepseek-news`, `deepseek-updates`, `seed-news`, `artificial-analysis-changelog` |
+| Changelogs & blogs | `cursor-changelog`, `cursor-blog`, `kiro-changelog`, `openrouter-blog`, `openai-blog`, `lilianweng-blog`, `anthropic-blog`, `meta-ai-blog`, `bedrock-docs`, `hy-news`, `mimo-news`, `bigmodel-news`, `minimax-news`, `kimi-blog`, `longcat-research`, `longcat-changelog`, `qwen-blog`, `gemini-blog`, `microsoft-ai-news`, `xai-news`, `deepseek-news`, `deepseek-updates`, `seed-news`, `artificial-analysis-changelog` |
 | Model catalogs | `bedrock-models` |
 | Infrastructure | `dmit-stock` |
 

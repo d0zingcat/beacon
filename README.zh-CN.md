@@ -39,7 +39,7 @@ curl -X POST "https://beacon.d0zingcat.workers.dev/sources/cursor-changelog/run"
 
 ## 支持的数据源
 
-Beacon 内置 **24 个数据源**。部署后请执行 D1 迁移，以注册 RSS 订阅类源。
+Beacon 内置 **26 个数据源**。部署后请执行 D1 迁移，以注册 RSS 订阅类源。
 
 | ID | 模式 | 抽取器 | 监控内容 |
 |----|------|--------|----------|
@@ -59,8 +59,10 @@ Beacon 内置 **24 个数据源**。部署后请执行 D1 迁移，以注册 RSS
 | `minimax-news` | append | webpage | [MiniMax 新闻与更新](https://www.minimaxi.com/news)（JSON API + 文档发布说明） |
 | `kimi-blog` | append | webpage | [Kimi 研究博客](https://www.kimi.com/blog/)（月之暗面） |
 | `longcat-research` | append | webpage | [LongCat 研究](https://longcat.ai/)（美团，SPA bundle） |
+| `longcat-changelog` | append | webpage | [LongCat 更新日志](https://longcat.chat/platform/docs/zh/change-log)（美团开放平台，VitePress SSR） |
 | `qwen-blog` | append | webpage | [Qwen 研究博客](https://qwen.ai/research)（阿里通义千问，page-config JSON API） |
 | `gemini-blog` | append | webpage | [Gemini 博客](https://deepmind.google/blog/)（Google DeepMind，服务端渲染卡片） |
+| `microsoft-ai-news` | append | webpage | [Microsoft AI News](https://microsoft.ai/news)（微软 AI 模型与新闻，服务端渲染卡片） |
 | `xai-news` | append | webpage | [xAI News](https://x.ai/blog)（服务端渲染 Next.js 卡片） |
 | `deepseek-news` | append | webpage | [DeepSeek News](https://api-docs.deepseek.com/zh-cn/news) |
 | `deepseek-updates` | append | webpage | [DeepSeek Updates](https://api-docs.deepseek.com/zh-cn/updates) |
@@ -70,7 +72,7 @@ Beacon 内置 **24 个数据源**。部署后请执行 D1 迁移，以注册 RSS
 
 | 分类 | 数据源 |
 |------|--------|
-| Changelog 与博客 | `cursor-changelog`、`cursor-blog`、`kiro-changelog`、`openrouter-blog`、`openai-blog`、`lilianweng-blog`、`anthropic-blog`、`meta-ai-blog`、`bedrock-docs`、`hy-news`、`mimo-news`、`bigmodel-news`、`minimax-news`、`kimi-blog`、`longcat-research`、`qwen-blog`、`gemini-blog`、`xai-news`、`deepseek-news`、`deepseek-updates`、`seed-news`、`artificial-analysis-changelog` |
+| Changelog 与博客 | `cursor-changelog`、`cursor-blog`、`kiro-changelog`、`openrouter-blog`、`openai-blog`、`lilianweng-blog`、`anthropic-blog`、`meta-ai-blog`、`bedrock-docs`、`hy-news`、`mimo-news`、`bigmodel-news`、`minimax-news`、`kimi-blog`、`longcat-research`、`longcat-changelog`、`qwen-blog`、`gemini-blog`、`microsoft-ai-news`、`xai-news`、`deepseek-news`、`deepseek-updates`、`seed-news`、`artificial-analysis-changelog` |
 | 模型目录 | `bedrock-models` |
 | 基础设施 | `dmit-stock` |
 
